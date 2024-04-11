@@ -18,7 +18,7 @@ func (h *Handler) Stream(r *http.Request) (string, error) {
 		body     string
 		respBody []byte
 		err      error
-		client   = http.DefaultClient
+		client   = h.Client
 	)
 
 	query := r.URL.Query()
@@ -75,13 +75,12 @@ func (h *Handler) Stream(r *http.Request) (string, error) {
 	var streamResp streamResponse
 	err = json.Unmarshal(respBody, &streamResp)
 	if err != nil {
-		return "", fmt.Errorf("json parse error: %w", err)
+		return "", fmt.Errorf("json parse error: %w. Response body: %s", err, string(respBody))
 	}
 
 	return streamResp.Data.URL, nil
 }
 
-// StreamHandler ...
 func (h *Handler) StreamHandler(w http.ResponseWriter, r *http.Request) {
 	// log.Println("/streamHandler")
 

@@ -11,7 +11,6 @@ import (
 
 var ConfigFileName = "/share/domofon/account.json"
 
-// Config ...
 type Config struct {
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh"`

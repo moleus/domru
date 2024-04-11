@@ -10,33 +10,29 @@ import (
 	"time"
 )
 
-// Refresh ...
 func (h *Handler) Refresh(refreshToken *string) (string, string, error) {
 	var (
 		body   []byte
 		err    error
-		client = http.DefaultClient
 	)
 
 	url := API_REFRESH_SESSION
-	request, err := http.NewRequest("GET", url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return "", "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
-	request = request.WithContext(ctx)
-
 	operator := strconv.Itoa(h.Config.Operator)
 
-	rt := WithHeader(client.Transport)
+    rt := request.Header
 	rt.Set("Content-Type", "application/json; charset=UTF-8")
 	rt.Set("Operator", operator)
 	rt.Set("Bearer", h.Config.RefreshToken)
-	client.Transport = rt
 
-	resp, err := client.Do(request)
+	resp, err := h.Client.Do(request)
 	if err != nil {
 		return "", "", err
 	}
@@ -47,8 +43,6 @@ func (h *Handler) Refresh(refreshToken *string) (string, string, error) {
 			log.Println(err2)
 		}
 	}()
-
-	// log.Printf("%#v", resp)
 
 	if resp.StatusCode == 409 { // Conflict (tokent already expired)
 		return "token can't be refreshed", "", nil

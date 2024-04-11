@@ -11,14 +11,16 @@ type Handler struct {
 	Config       *config.Config
 	UserAccounts []Account
 	Account      *Account
+    Client       *http.Client
 
 	TemplateFs embed.FS
 }
 
-func NewHandlers(config *config.Config, templateFs embed.FS) (h *Handler) {
+func NewHandlers(config *config.Config, templateFs embed.FS, client *http.Client) (h *Handler) {
 	h = &Handler{
 		Config:     config,
 		TemplateFs: templateFs,
+        Client:    client,
 	}
 
 	return h
