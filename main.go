@@ -4,10 +4,12 @@ import (
 	"embed"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/ad/domru/config"
 	"github.com/ad/domru/handlers"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 //go:embed templates/*
@@ -17,8 +19,13 @@ func main() {
 	// Init Config
 	addonConfig := config.InitConfig()
 
+    httpClient := retryablehttp.NewClient()
+    httpClient.RetryMax = 5
+
+    standartClient := httpClient.StandardClient()
+
 	// Init Handlers
-	h := handlers.NewHandlers(addonConfig, templateFs)
+	h := handlers.NewHandlers(addonConfig, templateFs, standartClient)
 
 	switch {
 	case addonConfig.Token != "" || addonConfig.RefreshToken != "":
@@ -26,6 +33,7 @@ func main() {
 			access, refresh, err := h.Refresh(&addonConfig.RefreshToken)
 			if err != nil {
 				log.Println("refresh token, error:", err.Error())
+                os.Exit(1);
 			} else {
 				addonConfig.Token = access
 				addonConfig.RefreshToken = refresh

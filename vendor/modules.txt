@@ -5,6 +5,12 @@ github.com/fogleman/gg
 ## explicit
 github.com/golang/freetype/raster
 github.com/golang/freetype/truetype
+# github.com/hashicorp/go-cleanhttp v0.5.2
+## explicit; go 1.13
+github.com/hashicorp/go-cleanhttp
+# github.com/hashicorp/go-retryablehttp v0.7.5
+## explicit; go 1.13
+github.com/hashicorp/go-retryablehttp
 # golang.org/x/image v0.10.0
 ## explicit; go 1.12
 golang.org/x/image/draw
