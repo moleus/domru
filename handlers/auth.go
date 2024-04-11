@@ -13,11 +13,8 @@ import (
 	"time"
 )
 
-// LoginHandler ...
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	ingressPath := r.Header.Get("X-Ingress-Path")
-
-	// log.Println(r.Method, "/login", ingressPath)
 
 	w.Header().Set("Content-Type", "text/html")
 
@@ -94,7 +91,6 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// LoginAddressHandler ...
 func (h *Handler) LoginAddressHandler(w http.ResponseWriter, r *http.Request) {
 	ingressPath := r.Header.Get("X-Ingress-Path")
 
@@ -252,39 +248,28 @@ func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Accounts ...
 func (h *Handler) Accounts(username *string) (a []Account, err error) {
-	var (
-		body   []byte
-		client = http.DefaultClient
-	)
-
 	url := fmt.Sprintf(API_AUTH_LOGIN, *username)
 	// log.Println("/accountsHandler", url)
 
-	request, err := http.NewRequest("GET", url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
+	header := request.Header
 
-	request = request.WithContext(ctx)
+	header.Set("Content-Type", "application/json")
+	header.Set("Accept", "*/*")
+	header.Set("User-Agent", API_USER_AGENT)
+	header.Set("Authorization", "")
+	header.Set("Accept-Language", "en-us")
+	header.Set("Accept-Encoding", "gzip, deflate, br")
 
-	rt := WithHeader(client.Transport)
-	rt.Set("Host", "myhome.novotelecom.ru")
-	rt.Set("Content-Type", "application/json")
-	rt.Set("Connection", "keep-alive")
-	rt.Set("Accept", "*/*")
-	rt.Set("User-Agent", API_USER_AGENT)
-	rt.Set("Authorization", "")
-	rt.Set("Accept-Language", "en-us")
-	rt.Set("Accept-Encoding", "gzip, deflate, br")
-
-	client.Transport = rt
-
-	resp, err := client.Do(request)
+	resp, err := h.Client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +285,8 @@ func (h *Handler) Accounts(username *string) (a []Account, err error) {
 		return nil, fmt.Errorf("token can't be refreshed")
 	}
 
-	if body, err = io.ReadAll(resp.Body); err != nil {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
 
@@ -312,7 +298,6 @@ func (h *Handler) Accounts(username *string) (a []Account, err error) {
 	return accounts, nil
 }
 
-// RequestCode ...
 func (h *Handler) RequestCode(username *string, account Account) (result bool, err error) {
 	var (
 		body   []byte
