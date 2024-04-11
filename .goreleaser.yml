@@ -1,0 +1,23 @@
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+- binary: domru
+  goos:
+    - linux
+    - darwin
+  goarch:
+    - amd64
+    - arm64
+
+kos:
+- repository: ghcr.io/Moleus/domru
+  tags:
+  - '{{.Version}}'
+  - latest
+  bare: true
+  preserve_import_paths: false
+  platforms:
+    - "linux/amd64"
+    - "linux/arm64"
