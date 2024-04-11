@@ -12,10 +12,9 @@ builds:
     - arm64
 
 kos:
-- repository: ghcr.io/Moleus/domru
+- repository: ghcr.io/moleus/domru
   tags:
   - '{{.Version}}'
-  - latest
   bare: true
   preserve_import_paths: false
   platforms:
