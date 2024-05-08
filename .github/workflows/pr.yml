@@ -1,11 +1,11 @@
-name: Create release and publish packages
+name: Build & publish docker image
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - dev
       - master
+      - dev
 
 jobs:
   tag:
@@ -22,6 +22,7 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches: "master,dev"
 
   release:
     name: Create release
