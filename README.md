@@ -8,26 +8,14 @@
     </a>
 </p>
 
-**ad/domru** is inspired by [alexmorbo/domru](https://github.com/alexmorbo/domru), web server what allows you to control your domofon.
+**moleus/domru** is a fork of [ad/domru](https://github.com/ad/domru), web server what allows you to control your domofon.
 
-## 🚀&nbsp; Installation and running
-
-```shell
-go get -u github.com/ad/domru
-```
-
+## Run in Docker
 ```shell
 cp example.accounts.json accounts.json
-domru -login=1234567890 -operator=2 -token=... -refresh=... -port=18000
-```
+docker build -t moleus/domru:latest .
 
-## 🚀&nbsp; Or Docker
-
-```shell
-cp example.accounts.json accounts.json
-docker build -t ad/domru:latest .
-
-docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/account.json ad/domru:latest
+docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/account.json moleus/domru:latest
 open http://localhost:8080/login
 
 enter phone number in format 79xxxxxxxxx
@@ -36,22 +24,20 @@ enter sms code, you will see received token and refresh token
 
 restart docker container
 
-docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/account.json ad/domru:latest
+docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/account.json moleus/domru:latest
 
 now go to http://localhost:8080
 ```
 
-## 🚀&nbsp; Or Docker Compose
+## Or Docker Compose
 ```
 docker-compose up
-
-the following instructions are the same
 ```
 
 And open in browser [http://localhost:8080/snapshot](http://localhost:8080/snapshot)
 
 ## Docker image
-You can find docker image in packages section of this github repository or pull it using `docker pull ghcr.io/ad/domru:latest`
+You can find docker image in packages section of this github repository or pull it using `docker pull ghcr.io/moleus/domru:latest`
 
 ## Endpoints and methods
 
@@ -74,11 +60,7 @@ You can find docker image in packages section of this github repository or pull 
 
 ## 🤝&nbsp; Found a bug? Missing a specific feature?
 
-Feel free to **file a new issue** with a respective title and description on the the [ad/domru](https://github.com/ad/domru/issues) repository. If you already found a solution to your problem, **we would love to review your pull request**!
-
-## ✅&nbsp; Requirements
-
-Requires a **Go version higher or equal to 1.11**.
+Feel free to **file a new issue** with a respective title and description on the the [moleus/domru](https://github.com/moleus/domru/issues) repository. If you already found a solution to your problem, **we would love to review your pull request**!
 
 ## 📘&nbsp; License
 

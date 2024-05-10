@@ -3,20 +3,20 @@ before:
     - go mod tidy
 
 builds:
-- binary: domru
-  goos:
-    - linux
-    - darwin
-  goarch:
-    - amd64
-    - arm64
+  - binary: domru
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
 
 kos:
-- repository: ghcr.io/moleus/domru
-  tags:
-  - '{{.Version}}'
-  bare: true
-  preserve_import_paths: false
-  platforms:
-    - "linux/amd64"
-    - "linux/arm64"
+  - repository: ghcr.io/moleus/domru
+    tags:
+      - '{{.Version}}'
+    bare: true
+    preserve_import_paths: false
+    platforms:
+      - "linux/amd64"
+      - "linux/arm64"
