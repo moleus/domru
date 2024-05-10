@@ -95,7 +95,7 @@ pre {
                     <div class="table-body-cell">Адрес:</div>
                     <div class="table-body-cell">
                         {{ $ac.Name }}
-                        <button onclick="fetch('http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}'); return false;">Открыть</button>
+                        <button onclick="fetch('{{ $.HassioIngress }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}'); return false;">Открыть</button>
                     </div>
                 </div>
                 <div class="resp-table-row">
