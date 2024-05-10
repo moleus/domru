@@ -85,22 +85,27 @@ pre {
                 </div>
                 {{ end }}
                 {{ with .Places.Data }}
-                    {{ range $index, $element := . }}
+                    {{ range $_, $element := . }}
+                        {{ range $index, $ac := $element.Place.AccessControls }}
+                <div class="resp-table-row">
+                    <div class="table-body-cell">Камера:</div>
+                    <div class="table-body-cell">№ {{ (index $.Cameras.Data $index).ID }}</div>
+                </div>
                 <div class="resp-table-row">
                     <div class="table-body-cell">Адрес:</div>
                     <div class="table-body-cell">
-                        {{ (index $element.Place.AccessControls 0).Name }}
-                        <button onclick="fetch('http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ (index $element.Place.AccessControls 0).ID }}'); return false;">Открыть</button>
+                        {{ $ac.Name }}
+                        <button onclick="fetch('http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}'); return false;">Открыть</button>
                     </div>
                 </div>
                 <div class="resp-table-row">
                     <div class="table-body-cell">Видеопоток:</div>
-                    <div class="table-body-cell">http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data 0).ID }}</div>
+                    <div class="table-body-cell">http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}</div>
                 </div>
                 <div class="resp-table-row">
                     <div class="table-body-cell"></div>
                     <div class="table-body-cell">
-                        <img src="{{ $.HassioIngress }}/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ (index $element.Place.AccessControls 0).ID }}" alt="Камера" width="320">
+                        <img src="{{ $.HassioIngress }}/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}" alt="Камера" width="320">
                     </div>
                 </div>
                 <div class="resp-table-row">
@@ -109,17 +114,18 @@ pre {
                         <pre>
 rest_command:
     domru_open_door:
-        url: http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ (index $element.Place.AccessControls 0).ID }}
+        url: http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
 
 camera:
     - platform: generic
         name: domofon
-        still_image_url: http://{{ $.HostIP }}:{{ $.Port }}/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ (index $element.Place.AccessControls 0).ID }}
-        stream_source: http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data 0).ID }}
+        still_image_url: http://{{ $.HostIP }}:{{ $.Port }}/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
+        stream_source: http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}
                         </pre>
                     </div>
                 </div>
-                    {{ end }}        
+                        {{ end }}
+                    {{ end }}
                 {{ end }}
             </div>
         </div>
