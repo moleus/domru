@@ -100,7 +100,7 @@ pre {
                 </div>
                 <div class="resp-table-row">
                     <div class="table-body-cell">Видеопоток:</div>
-                    <div class="table-body-cell">http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}</div>
+                    <div class="table-body-cell">%%protocol%%//%%hostname%%:%%port%%/stream?cameraID={{ (index $.Cameras.Data $index).ID }}</div>
                 </div>
                 <div class="resp-table-row">
                     <div class="table-body-cell"></div>
@@ -114,13 +114,13 @@ pre {
                         <pre>
 rest_command:
     domru_open_door:
-        url: http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
+        url: %%protocol%%//%%hostname%%:%%port%%/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
 
 camera:
     - platform: generic
         name: domofon
-        still_image_url: http://{{ $.HostIP }}:{{ $.Port }}/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
-        stream_source: http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}
+        still_image_url: %%protocol%%//%%hostname%%:%%port%%/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
+        stream_source: %%protocol%%//%%hostname%%:%%port%%/stream?cameraID={{ (index $.Cameras.Data $index).ID }}
                         </pre>
                     </div>
                 </div>
@@ -132,4 +132,27 @@ camera:
         {{ end }}
     </main>
 </body>
+<script>
+    let protocol = 'http:';
+    let hostname = '{{ $.HostIP }}';
+    let port = '{{ $.Port }}';
+
+    const url = new URL(document.URL);
+
+    if (protocol != url.protocol) {
+        protocol = url.protocol;
+    }
+    if (hostname != url.hostname) {
+        hostname = url.hostname;
+    }
+    if (port != url.port) {
+        port = url.port;
+    }
+
+    const wrapper = document.getElementById('wrapper');
+
+    wrapper.innerHTML = wrapper.innerHTML.replaceAll('%%protocol%%', protocol);
+    wrapper.innerHTML = wrapper.innerHTML.replaceAll('%%hostname%%', hostname);
+    wrapper.innerHTML = wrapper.innerHTML.replaceAll('%%port%%', port);
+</script>
 </html>
