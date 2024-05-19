@@ -1,3 +1,4 @@
+---
 name: Build & publish docker image
 
 on:
@@ -6,6 +7,9 @@ on:
     branches:
       - master
       - dev
+
+permissions:
+  packages: write
 
 env:
   BRANCH_NAME: "${{ github.head_ref || github.ref_name }}"
