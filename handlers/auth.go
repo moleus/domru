@@ -213,10 +213,23 @@ func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	finances, _ := h.GetFinances()
 
+	// fix: https://github.com/ad/domru/issues/11
+	host := r.Host
+	if host == "" {
+		host = fmt.Sprintf("%s:%s", hostIP, strconv.Itoa(h.Config.Port))
+	}
+	var scheme string
+	scheme = r.URL.Scheme;
+	if scheme == "" {
+		scheme = "http"
+	}
+
 	data := HomePageData{
 		HassioIngress: ingressPath,
 		HostIP:        hostIP,
 		Port:          strconv.Itoa(h.Config.Port),
+		Host:          host,
+		Scheme:        scheme,
 		LoginError:    loginError,
 		Phone:         strconv.Itoa(h.Config.Login),
 		Token:         h.Config.Token,
