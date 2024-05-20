@@ -102,6 +102,8 @@ type HomePageData struct {
 	HassioIngress string
 	HostIP        string
 	Port          string
+	Host          string
+	Scheme        string
 	LoginError    string
 	Phone         string
 	Token         string

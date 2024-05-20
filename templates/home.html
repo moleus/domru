@@ -95,12 +95,12 @@ pre {
                     <div class="table-body-cell">Адрес:</div>
                     <div class="table-body-cell">
                         {{ $ac.Name }}
-                        <button onclick="fetch('http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}'); return false;">Открыть</button>
+                        <button onclick="fetch('{{ $.HassioIngress }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}'); return false;">Открыть</button>
                     </div>
                 </div>
                 <div class="resp-table-row">
                     <div class="table-body-cell">Видеопоток:</div>
-                    <div class="table-body-cell">http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}</div>
+                    <div class="table-body-cell">{{ $.Scheme }}://{{ $.Host }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}</div>
                 </div>
                 <div class="resp-table-row">
                     <div class="table-body-cell"></div>
@@ -114,13 +114,13 @@ pre {
                         <pre>
 rest_command:
     domru_open_door:
-        url: http://{{ $.HostIP }}:{{ $.Port }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
+        url: {{ $.Scheme }}://{{ $.Host }}/door?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
 
 camera:
     - platform: generic
         name: domofon
-        still_image_url: http://{{ $.HostIP }}:{{ $.Port }}/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
-        stream_source: http://{{ $.HostIP }}:{{ $.Port }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}
+        still_image_url: {{ $.Scheme }}://{{ $.Host }}/snapshot?placeID={{ $element.Place.ID }}&accessControlID={{ $ac.ID }}
+        stream_source: {{ $.Scheme }}://{{ $.Host }}/stream?cameraID={{ (index $.Cameras.Data $index).ID }}
                         </pre>
                     </div>
                 </div>
