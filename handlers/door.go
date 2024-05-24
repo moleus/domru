@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ad/domru/pkg/domru"
 	"io"
 	"log"
 	"net/http"
@@ -33,7 +34,7 @@ func (h *Handler) Door(r *http.Request) (string, error) {
 	placeID := query.Get("placeID")
 	accessControlID := query.Get("accessControlID")
 
-	url := fmt.Sprintf(API_OPEN_DOOR, placeID, accessControlID)
+	url := fmt.Sprintf(domru.API_OPEN_DOOR, placeID, accessControlID)
 
 	request, err := http.NewRequest("POST", url, buf)
 	if err != nil {

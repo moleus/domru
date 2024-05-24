@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ad/domru/pkg/domru"
 	jpeg "image/jpeg"
 	"io"
 	"log"
@@ -28,7 +29,7 @@ func (h *Handler) SnapshotHandler(w http.ResponseWriter, r *http.Request) {
 	placeID := query.Get("placeID")
 	accessControlID := query.Get("accessControlID")
 
-	url := fmt.Sprintf(API_VIDEO_SNAPSHOT, placeID, accessControlID)
+	url := fmt.Sprintf(domru.API_VIDEO_SNAPSHOT, placeID, accessControlID)
 	// log.Println("/snapshotHandler", url)
 
 	request, err := http.NewRequest("GET", url, nil)

@@ -2,15 +2,14 @@ package token_provider
 
 import (
 	"fmt"
-	"github.com/ad/domru/handlers"
 	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/sender"
+	"github.com/ad/domru/pkg/domru"
 	"log"
 	"net/http"
 )
 
 type TokenProvider interface {
-	GetToken() string
+	GetToken() (string, error)
 }
 
 type ValidTokenProvider struct {
@@ -47,8 +46,8 @@ func (v *ValidTokenProvider) RefreshToken() error {
 	}
 
 	var refreshTokenResponse auth.AuthenticationResponse
-	err = sender.NewUpstreamSender(handlers.API_REFRESH_SESSION,
-		sender.WithHeader("Bearer", credentials.RefreshToken),
+	err = domru.NewUpstreamRequest(domru.API_REFRESH_SESSION,
+		domru.WithHeader("Bearer", credentials.RefreshToken),
 	).Send(http.MethodGet, &refreshTokenResponse)
 	if err != nil {
 		return fmt.Errorf("send request to refresh token: %w", err)
@@ -68,7 +67,7 @@ func (v *ValidTokenProvider) isTokenValid() bool {
 		return false
 	}
 
-	err = sender.NewUpstreamSender(v.checkTokenUrl, sender.WithHeader("Authorization", "Bearer "+credentials.AccessToken)).Send(http.MethodGet, nil)
+	err = domru.NewUpstreamRequest(v.checkTokenUrl, domru.WithTokenString(credentials.AccessToken)).Send(http.MethodGet, nil)
 	if err != nil {
 		log.Printf("error while checking token: %v", err)
 		return false

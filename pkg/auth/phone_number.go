@@ -2,7 +2,7 @@ package auth
 
 import (
 	"fmt"
-	"github.com/ad/domru/pkg/sender"
+	"github.com/ad/domru/pkg/domru"
 	"net/http"
 	"regexp"
 )
@@ -68,7 +68,7 @@ func (a *PhoneNumberAuthenticator) getUserAccounts() ([]Account, error) {
 	authUrl := fmt.Sprintf("%s/auth/v2/login/%s", BaseURL, a.phoneNumber)
 
 	var accounts []Account
-	err := sender.NewUpstreamSender(authUrl).Send(http.MethodGet, &accounts)
+	err := domru.NewUpstreamRequest(authUrl).Send(http.MethodGet, &accounts)
 	if err != nil {
 		return []Account{}, fmt.Errorf("failed to check account: %w", err)
 	}
@@ -88,7 +88,7 @@ func (a *PhoneNumberAuthenticator) requestConfirmationCode(account Account) erro
 		SubscriberID: account.SubscriberID,
 	}
 
-	err := sender.NewUpstreamSender(confirmUrl, sender.WithBody(confirmRequest)).Send(http.MethodPost, nil)
+	err := domru.NewUpstreamRequest(confirmUrl, domru.WithBody(confirmRequest)).Send(http.MethodPost, nil)
 	if err != nil {
 		return fmt.Errorf("failed to request confirmation code: %w", err)
 	}
@@ -106,7 +106,7 @@ func (a *PhoneNumberAuthenticator) sendConfirmationCode(smsCode string) (Authent
 		SubscriberID: "0",
 	}
 	var confirmResponse AuthenticationResponse
-	err := sender.NewUpstreamSender(confirmUrl, sender.WithBody(confirmRequest)).Send(http.MethodPost, &confirmResponse)
+	err := domru.NewUpstreamRequest(confirmUrl, domru.WithBody(confirmRequest)).Send(http.MethodPost, &confirmResponse)
 	if err != nil {
 		return AuthenticationResponse{}, fmt.Errorf("failed to send confirmation code: %w", err)
 	}

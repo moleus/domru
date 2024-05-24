@@ -1,9 +1,10 @@
-package handlers
+package home_assistant
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ad/domru/pkg/domru"
 	"io"
 	"log"
 	"net/http"
@@ -12,8 +13,7 @@ import (
 	"time"
 )
 
-// HANetwork ...
-func (h *Handler) HANetwork() (string, error) {
+func GetHomeAssistantNetworkAddress() (string, error) {
 	var (
 		body             []byte
 		err              error
@@ -28,7 +28,7 @@ func (h *Handler) HANetwork() (string, error) {
 		return "", fmt.Errorf("supervisor token not set")
 	}
 
-	url := API_HA_NETWORK
+	url := domru.API_HA_NETWORK
 
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -65,7 +65,7 @@ func (h *Handler) HANetwork() (string, error) {
 
 	// log.Println(string(body))
 
-	var haconfig HAConfig
+	var haconfig domru.HAConfig
 
 	if err := json.Unmarshal(body, &haconfig); err != nil {
 		return "", fmt.Errorf("supervisor ip Unmarshal %s", err.Error())
@@ -78,19 +78,3 @@ func (h *Handler) HANetwork() (string, error) {
 
 	return "", fmt.Errorf("supervisor ip not found")
 }
-
-// // HANetworkHandler ...
-// func (h *Handler) HANetworkHandler(w http.ResponseWriter, r *http.Request) {
-// 	log.Println("/HANetworkHandler")
-
-// 	data, err := h.HANetwork()
-// 	if err != nil {
-// 		log.Println("HANetworkHandler", err.Error())
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-
-// 	if _, err := w.Write([]byte(data)); err != nil {
-// 		log.Println("HANetworkHandler", err.Error())
-// 	}
-// }

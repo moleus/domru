@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ad/domru/pkg/auth"
+	"github.com/ad/domru/pkg/domru"
 	"html/template"
 	"io"
 	"log"
@@ -41,7 +42,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 				h.UserAccounts = accounts
 				// log.Printf("got accounts %+v\n", accounts)
 
-				data := AccountsPageData{accounts, phone, ingressPath, loginError}
+				data := domru.AccountsPageData{accounts, phone, ingressPath, loginError}
 
 				var tmpl []byte
 				var err error
@@ -74,7 +75,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 
-	data := LoginPageData{loginError, strconv.Itoa(h.Config.Login), ingressPath}
+	data := domru.LoginPageData{loginError, strconv.Itoa(h.Config.Login), ingressPath}
 
 	t := template.New("t")
 	t, err = t.Parse(string(tmpl))
@@ -146,7 +147,7 @@ func (h *Handler) LoginAddressHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(loginError)
 	}
 
-	data := SMSPageData{phone, index, ingressPath, loginError}
+	data := domru.SMSPageData{phone, index, ingressPath, loginError}
 
 	var tmpl []byte
 	var err error
@@ -170,159 +171,13 @@ func (h *Handler) LoginAddressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HomeHandler ...
-func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
-	ingressPath := r.Header.Get("X-Ingress-Path")
-	// log.Println(r.Method, "/", ingressPath)
-
-	if h.Config.Token == "" || h.Config.RefreshToken == "" {
-		http.Redirect(w, r, ingressPath+"/login", http.StatusSeeOther)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html")
-
-	var loginError string
-
-	hostIP, err2 := h.HANetwork()
-	if err2 != nil {
-		// loginError = "hostIP got: " + err2.Error()
-		hostIP = "localhost"
-	}
-
-	var cameras Cameras
-
-	if loginError == "" {
-		camerasData, err := h.Cameras()
-		if err != nil {
-			loginError = "cameras (" + camerasData + ") got " + err.Error()
-		} else {
-			if err := json.Unmarshal([]byte(camerasData), &cameras); err != nil {
-				loginError = "cameras (" + camerasData + ") Unmarshal got " + err.Error()
-			}
-		}
-	}
-
-	var places Places
-
-	if loginError == "" {
-		placesData, err := h.Places()
-		if err != nil {
-			loginError = "places (" + placesData + ") got " + err.Error()
-		} else {
-			if err := json.Unmarshal([]byte(placesData), &places); err != nil {
-				loginError = "places (" + placesData + ") Unmarshal got " + err.Error()
-			}
-		}
-	}
-
-	finances, _ := h.GetFinances()
-
-	// fix: https://github.com/ad/domru/issues/11
-	host := r.Host
-	if host == "" {
-		host = fmt.Sprintf("%s:%s", hostIP, strconv.Itoa(h.Config.Port))
-	}
-	var scheme string
-	scheme = r.URL.Scheme
-	if scheme == "" {
-		scheme = "http"
-	}
-
-	data := HomePageData{
-		HassioIngress: ingressPath,
-		HostIP:        hostIP,
-		Port:          strconv.Itoa(h.Config.Port),
-		Host:          host,
-		Scheme:        scheme,
-		LoginError:    loginError,
-		Phone:         strconv.Itoa(h.Config.Login),
-		Token:         h.Config.Token,
-		RefreshToken:  h.Config.RefreshToken,
-		Cameras:       cameras,
-		Places:        places,
-		Finances:      *finances,
-	}
-
-	var tmpl []byte
-	var err error
-	if tmpl, err = h.TemplateFs.ReadFile("templates/home.html"); err != nil {
-		fmt.Println("reafile templates/home.html error", err)
-	}
-
-	t := template.New("t")
-	t, err = t.Parse(string(tmpl))
-	if err != nil {
-		loginError = "parse templates/home.html " + err.Error()
-	} else {
-		err = t.Execute(w, data)
-		if err != nil {
-			loginError = "execute templates/home.html " + err.Error()
-		}
-	}
-
-	if loginError != "" {
-		log.Println(loginError)
-	}
-}
-
-func (h *Handler) Accounts(username *string) (a []auth.Account, err error) {
-	url := fmt.Sprintf(API_AUTH_LOGIN, *username)
-	// log.Println("/accountsHandler", url)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	header := request.Header
-
-	header.Set("Content-Type", "application/json")
-	header.Set("Accept", "*/*")
-	header.Set("User-Agent", API_USER_AGENT)
-	header.Set("Authorization", "")
-	header.Set("Accept-Language", "en-us")
-	header.Set("Accept-Encoding", "gzip, deflate, br")
-
-	resp, err := h.Client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		err2 := resp.Body.Close()
-		if err2 != nil {
-			log.Println(err2)
-		}
-	}()
-
-	if resp.StatusCode == 409 { // Conflict (tokent already expired)
-		return nil, fmt.Errorf("token can't be refreshed")
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var accounts []auth.Account
-	if err = json.Unmarshal(body, &accounts); err != nil {
-		return nil, err
-	}
-
-	return accounts, nil
-}
-
 func (h *Handler) RequestCode(username *string, account auth.Account) (result bool, err error) {
 	var (
 		body   []byte
 		client = http.DefaultClient
 	)
 
-	url := fmt.Sprintf(API_AUTH_CONFIRMATION, *username)
+	url := fmt.Sprintf(domru.API_AUTH_CONFIRMATION, *username)
 	// log.Println("/requestCodeHandler", url)
 
 	b, err := json.Marshal(account)
@@ -343,7 +198,7 @@ func (h *Handler) RequestCode(username *string, account auth.Account) (result bo
 	rt := WithHeader(client.Transport)
 	rt.Set("Host", "myhome.novotelecom.ru")
 	rt.Set("Content-Type", "application/json")
-	rt.Set("User-Agent", API_USER_AGENT)
+	rt.Set("User-Agent", domru.API_USER_AGENT)
 	rt.Set("Connection", "keep-alive")
 	rt.Set("Accept", "*/*")
 	rt.Set("Accept-Language", "en-us")
@@ -386,7 +241,7 @@ func (h *Handler) SendCode(r *http.Request) (authToken, refreshToken string, err
 		client = http.DefaultClient
 	)
 
-	url := fmt.Sprintf(API_AUTH_CONFIRMATION_SMS, strconv.Itoa(h.Config.Login))
+	url := fmt.Sprintf(domru.API_AUTH_CONFIRMATION_SMS, strconv.Itoa(h.Config.Login))
 
 	if err := r.ParseForm(); err != nil {
 		return "", "", fmt.Errorf("ParseForm() err: %v", err)
@@ -425,7 +280,7 @@ func (h *Handler) SendCode(r *http.Request) (authToken, refreshToken string, err
 	rt := WithHeader(client.Transport)
 	rt.Set("Host", "myhome.novotelecom.ru")
 	rt.Set("Content-Type", "application/json")
-	rt.Set("User-Agent", API_USER_AGENT)
+	rt.Set("User-Agent", domru.API_USER_AGENT)
 	rt.Set("Connection", "keep-alive")
 	rt.Set("Accept", "*/*")
 	rt.Set("Accept-Language", "en-us")
@@ -464,31 +319,6 @@ func (h *Handler) SendCode(r *http.Request) (authToken, refreshToken string, err
 	}
 
 	return "", "", fmt.Errorf("unknown error with status %d\n%s", resp.StatusCode, body)
-}
-
-// AccountsHandler ...
-func (h *Handler) AccountsHandler(w http.ResponseWriter, r *http.Request) {
-	// log.Println("/accountsHandler")
-
-	login := strconv.Itoa(h.Config.Login)
-
-	data, err := h.Accounts(&login)
-	if err != nil {
-		log.Println("accountsHandler", err.Error())
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	b, err := json.Marshal(data)
-	if err != nil {
-		fmt.Printf("Error: %s", err)
-
-		return
-	}
-
-	if _, err := w.Write(b); err != nil {
-		log.Println("accountsHandler", err.Error())
-	}
 }
 
 // LoginSMSHandler ...
