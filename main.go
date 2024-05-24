@@ -2,70 +2,66 @@ package main
 
 import (
 	"embed"
+	"github.com/hashicorp/go-retryablehttp"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
-
-	"github.com/ad/domru/config"
-	"github.com/ad/domru/handlers"
-	"github.com/hashicorp/go-retryablehttp"
+	"net/http/httputil"
+	"net/url"
 )
 
 //go:embed templates/*
 var templateFs embed.FS
 
 func main() {
+	listenAddr := ":8082"
 	// Init Config
-	addonConfig := config.InitConfig()
+	//addonConfig := config.InitConfig()
 
-    httpClient := retryablehttp.NewClient()
-    httpClient.RetryMax = 5
+	httpClient := retryablehttp.NewClient()
+	httpClient.RetryMax = 5
 
-    standartClient := httpClient.StandardClient()
-
-	// Init Handlers
-	h := handlers.NewHandlers(addonConfig, templateFs, standartClient)
-
-	switch {
-	case addonConfig.Token != "" || addonConfig.RefreshToken != "":
-		if addonConfig.RefreshToken != "" {
-			access, refresh, err := h.Refresh(&addonConfig.RefreshToken)
-			if err != nil {
-				log.Println("refresh token, error:", err.Error())
-                os.Exit(1);
-			} else {
-				addonConfig.Token = access
-				addonConfig.RefreshToken = refresh
-
-				if err = addonConfig.WriteConfig(); err != nil {
-					log.Println("error on write config file ", err)
-				}
-			}
-		}
-	default:
-		log.Println("auth/refresh token or login and password must be provided")
+	tokenProvider := func() string {
+		return "token"
 	}
 
-	http.HandleFunc("/", h.HomeHandler)
-	http.HandleFunc("/login", h.LoginHandler)
-	http.HandleFunc("/login/address", h.LoginAddressHandler)
-	http.HandleFunc("/sms", h.LoginSMSHandler)
-	// http.HandleFunc("/network", h.HANetworkHandler)
+	upstream, err := url.Parse("https://myhome.novotelecom.ru")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	http.HandleFunc("/cameras", h.CamerasHandler)
-	http.HandleFunc("/door", h.DoorHandler)
-	http.HandleFunc("/events/last", h.LastEventHandler)
-	http.HandleFunc("/events", h.EventsHandler)
-	http.HandleFunc("/finances", h.FinancesHandler)
-	http.HandleFunc("/operators", h.OperatorsHandler)
-	http.HandleFunc("/places", h.PlacesHandler)
-	http.HandleFunc("/snapshot", h.SnapshotHandler)
-	http.HandleFunc("/stream", h.StreamHandler)
+	proxy := httputil.NewSingleHostReverseProxy(upstream)
+	mux := http.NewServeMux()
 
-	log.Println("start listening on", addonConfig.Port, "with token", addonConfig.Token)
+	addRestPrefixHandler := func(p *httputil.ReverseProxy) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("Adding prefix request to %s\n", r.URL)
+			r.URL.Path = "/rest/v1" + r.URL.Path
+			p.ServeHTTP(w, r)
+		}
+	}
 
-	if err := http.ListenAndServe(":"+strconv.Itoa(addonConfig.Port), nil); err != nil {
-		panic("ListenAndServe: " + err.Error())
+	defaultProxyHandler := func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Passing request to %s\n", r.URL)
+		proxy.ServeHTTP(w, r)
+	}
+
+	mux.HandleFunc("/stream", addRestPrefixHandler(proxy))
+	mux.HandleFunc("/events", addRestPrefixHandler(proxy))
+	mux.HandleFunc("/finances", addRestPrefixHandler(proxy))
+	mux.HandleFunc("/", defaultProxyHandler)
+
+	// Modify the request
+	proxy.Director = func(req *http.Request) {
+		req.URL.Scheme = upstream.Scheme
+		req.URL.Host = upstream.Host
+		req.Host = upstream.Host
+		req.Header.Set("Authentication", tokenProvider())
+		log.Printf("Proxying request to %s\n", req.URL)
+	}
+
+	log.Printf("Listening on %d\n", listenAddr)
+	err = http.ListenAndServe(listenAddr, mux)
+	if err != nil {
+		log.Fatal(err)
 	}
 }

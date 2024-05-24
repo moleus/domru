@@ -162,6 +162,23 @@ figure {
                     <button type="submit" class="btn">Войти по номеру телефона</button>
                 </div>
             </form>
+            <form action="{{ .HassioIngress }}/loginWithPassword" method="post">
+                <div class="group">
+                    <input type="text" required name="accountId" placeholder="Account ID">
+                    <span class="bar"></span>
+                    <label>Account ID</label>
+                </div>
+                <div class="group">
+                    <input type="password" required name="password" placeholder="Password">
+                    <span class="bar"></span>
+                    <label>Password</label>
+                </div>
+                <br>
+                <div class="alert alert-danger">{{ .LoginError }}</div>
+                <div class="group">
+                    <button type="submit" class="btn">Войти с помощью номера договора и пароля</button>
+                </div>
+            </form>
         </figure>
     </main>
 </body>

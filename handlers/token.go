@@ -12,8 +12,8 @@ import (
 
 func (h *Handler) Refresh(refreshToken *string) (string, string, error) {
 	var (
-		body   []byte
-		err    error
+		body []byte
+		err  error
 	)
 
 	url := API_REFRESH_SESSION
@@ -27,7 +27,7 @@ func (h *Handler) Refresh(refreshToken *string) (string, string, error) {
 
 	operator := strconv.Itoa(h.Config.Operator)
 
-    rt := request.Header
+	rt := request.Header
 	rt.Set("Content-Type", "application/json; charset=UTF-8")
 	rt.Set("Operator", operator)
 	rt.Set("Bearer", h.Config.RefreshToken)
@@ -52,7 +52,7 @@ func (h *Handler) Refresh(refreshToken *string) (string, string, error) {
 		return "", "", err
 	}
 
-	var authResp ConfirmResponse
+	var authResp AuthenticationResponse
 	if err = json.Unmarshal(body, &authResp); err != nil {
 		return "", "", err
 	}

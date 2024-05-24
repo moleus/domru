@@ -15,11 +15,17 @@ import (
 
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	ingressPath := r.Header.Get("X-Ingress-Path")
-
 	w.Header().Set("Content-Type", "text/html")
 
-	var loginError string
+	if r.Method == "POST" {
+		h.handlePostLogin(w, r, ingressPath)
+		return
+	}
 
+	h.handleGetLogin(w, r, ingressPath)
+}
+
+func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		if err := r.ParseForm(); err != nil {
 			loginError = fmt.Sprintf("ParseForm() err: %v", err)
@@ -89,6 +95,64 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if loginError != "" {
 		log.Println(loginError)
 	}
+}
+
+func (h *Handler) handlePostLogin(w http.ResponseWriter, r *http.Request, ingressPath string) {
+	if err := r.ParseForm(); err != nil {
+		log.Println(fmt.Sprintf("ParseForm() err: %v", err))
+		return
+	}
+
+	phone := r.FormValue("phone")
+	accounts, err := h.Accounts(&phone)
+	if err != nil {
+		log.Println(fmt.Sprintf("login error: %v", err.Error()))
+		return
+	}
+
+	if n, err := strconv.Atoi(phone); err == nil {
+		h.Config.Login = n
+		h.Config.WriteConfig()
+	}
+
+	h.UserAccounts = accounts
+	data := AccountsPageData{accounts, phone, ingressPath, ""}
+
+	tmpl, err := h.TemplateFs.ReadFile("templates/accounts.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	t, err := template.New("t").Parse(string(tmpl))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	t.Execute(w, data)
+}
+
+func (h *Handler) handleGetLogin(w http.ResponseWriter, r *http.Request, ingressPath string) {
+	tmpl, err := h.TemplateFs.ReadFile("templates/login.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	data := LoginPageData{"", strconv.Itoa(h.Config.Login), ingressPath}
+
+	t, err := template.New("t").Parse(string(tmpl))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	t.Execute(w, data)
+}
+
+func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func (h *Handler) LoginAddressHandler(w http.ResponseWriter, r *http.Request) {
@@ -219,7 +283,7 @@ func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 		host = fmt.Sprintf("%s:%s", hostIP, strconv.Itoa(h.Config.Port))
 	}
 	var scheme string
-	scheme = r.URL.Scheme;
+	scheme = r.URL.Scheme
 	if scheme == "" {
 		scheme = "http"
 	}
@@ -389,21 +453,23 @@ func (h *Handler) SendCode(r *http.Request) (authToken, refreshToken string, err
 
 	code := r.FormValue("code")
 
-	c := ConfirmRequest{
-		Confirm:      code,
-		SubscriberID: h.Account.SubscriberID,
+	if h.Account.ProfileID == nil {
+		return "", "", fmt.Errorf("ProfileID is nil")
+	}
+
+	c := ConfirmationRequest{
+		Confirm1:     code,
+		Confirm2:     code,
+		SubscriberID: strconv.Itoa(h.Account.SubscriberID),
 		Login:        strconv.Itoa(h.Config.Login),
-		OperatorID:   int64(h.Config.Operator),
-		AccountID:    h.Account.AccountID,
-		ProfileID:    h.Account.ProfileID,
+		OperatorID:   h.Config.Operator,
+		ProfileID:    *h.Account.ProfileID,
 	}
 
 	b, err := json.Marshal(c)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("marshal err: %v", err)
 	}
-
-	// log.Println("/sms", url, string(b))
 
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
 	if err != nil {
@@ -448,7 +514,7 @@ func (h *Handler) SendCode(r *http.Request) (authToken, refreshToken string, err
 	}
 
 	if resp.StatusCode == 200 {
-		var authResp ConfirmResponse
+		var authResp AuthenticationResponse
 		if err = json.Unmarshal(body, &authResp); err != nil {
 			return "", "", err
 		}

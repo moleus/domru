@@ -24,28 +24,12 @@ const (
 )
 
 type Account struct {
-	OperatorID   int64  `json:"operatorId"`
-	SubscriberID int64  `json:"subscriberId"`
-	AccountID    string `json:"accountId"`
-	PlaceID      int64  `json:"placeId"`
-	Address      string `json:"address"`
-	ProfileID    string `json:"profileId"`
-}
-
-type ConfirmRequest struct {
-	Confirm      string `json:"confirm1"`
-	SubscriberID int64  `json:"subscriberId"`
-	Login        string `json:"login"`
-	OperatorID   int64  `json:"operatorId"`
-	AccountID    string `json:"accountId"`
-	ProfileID    string `json:"profileId"`
-}
-
-type ConfirmResponse struct {
-	OperatorID   int64  `json:"operatorId"`
-	TokenType    string `json:"tokenType"`
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
+	AccountID    *string `json:"accountId"`
+	Address      string  `json:"address"`
+	OperatorID   int     `json:"operatorId"`
+	PlaceID      int     `json:"placeId"`
+	ProfileID    *string `json:"profileId"` // Use pointer to string for null value
+	SubscriberID int     `json:"subscriberId"`
 }
 
 type AccountsPageData struct {
