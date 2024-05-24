@@ -1,4 +1,4 @@
-package auth
+package sender
 
 import (
 	"bytes"
@@ -22,12 +22,17 @@ type UpstreamSender struct {
 	headers http.Header
 }
 
-func NewUpstreamSender(url string) *UpstreamSender {
+func NewUpstreamSender(url string, options ...func(sender *UpstreamSender)) *UpstreamSender {
 	headers := make(http.Header)
 	for key, value := range defaultHeaders {
 		headers.Add(key, value)
 	}
-	return &UpstreamSender{url: url, headers: headers, body: nil}
+	sender := &UpstreamSender{url: url, headers: headers, body: nil}
+
+	for _, option := range options {
+		option(sender)
+	}
+	return sender
 }
 
 func WithHeader(key string, value string) func(*UpstreamSender) {
@@ -43,7 +48,7 @@ func WithBody(body interface{}) func(*UpstreamSender) {
 }
 
 func (s *UpstreamSender) Send(method string, output interface{}) error {
-	var requestBody *bytes.Buffer
+	var requestBody io.Reader = nil
 
 	if s.body != nil {
 		jsonBody, err := json.Marshal(s.body)

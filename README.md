@@ -15,7 +15,7 @@
 cp example.accounts.json accounts.json
 docker build -t moleus/domru:latest .
 
-docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/account.json moleus/domru:latest
+docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:latest
 open http://localhost:8080/login
 
 enter phone number in format 79xxxxxxxxx
@@ -24,7 +24,7 @@ enter sms code, you will see received token and refresh token
 
 restart docker container
 
-docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/account.json moleus/domru:latest
+docker run --name domru --rm -p 8080:18000 -e DOMRU_PORT=18000 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:latest
 
 now go to http://localhost:8080
 ```

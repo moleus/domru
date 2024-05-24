@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ad/domru/handlers"
 	"github.com/ad/domru/pkg/auth"
+	"github.com/ad/domru/pkg/sender"
 	"log"
 	"net/http"
 )
@@ -40,8 +41,15 @@ func (v *ValidTokenProvider) GetToken() (string, error) {
 }
 
 func (v *ValidTokenProvider) RefreshToken() error {
+	credentials, err := v.credentialsStore.LoadCredentials()
+	if err != nil {
+		return fmt.Errorf("load credentials: %w", err)
+	}
+
 	var refreshTokenResponse auth.AuthenticationResponse
-	err := auth.SendRequest(handlers.API_REFRESH_SESSION, http.MethodGet, nil, &refreshTokenResponse)
+	err = sender.NewUpstreamSender(handlers.API_REFRESH_SESSION,
+		sender.WithHeader("Bearer", credentials.RefreshToken),
+	).Send(http.MethodGet, &refreshTokenResponse)
 	if err != nil {
 		return fmt.Errorf("send request to refresh token: %w", err)
 	}
@@ -55,17 +63,14 @@ func (v *ValidTokenProvider) RefreshToken() error {
 }
 
 func (v *ValidTokenProvider) isTokenValid() bool {
-	resp, err := http.Get(v.checkTokenUrl)
+	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
-		log.Printf("error while checking token: %v", err)
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
 		return false
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("unexpected status code: %d", resp.StatusCode)
+	err = sender.NewUpstreamSender(v.checkTokenUrl, sender.WithHeader("Authorization", "Bearer "+credentials.AccessToken)).Send(http.MethodGet, nil)
+	if err != nil {
+		log.Printf("error while checking token: %v", err)
 		return false
 	}
 

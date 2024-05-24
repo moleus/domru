@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ad/domru/pkg/auth"
 	"html/template"
 	"io"
 	"log"
@@ -15,17 +16,11 @@ import (
 
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	ingressPath := r.Header.Get("X-Ingress-Path")
+
 	w.Header().Set("Content-Type", "text/html")
 
-	if r.Method == "POST" {
-		h.handlePostLogin(w, r, ingressPath)
-		return
-	}
+	var loginError string
 
-	h.handleGetLogin(w, r, ingressPath)
-}
-
-func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		if err := r.ParseForm(); err != nil {
 			loginError = fmt.Sprintf("ParseForm() err: %v", err)
@@ -95,60 +90,6 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if loginError != "" {
 		log.Println(loginError)
 	}
-}
-
-func (h *Handler) handlePostLogin(w http.ResponseWriter, r *http.Request, ingressPath string) {
-	if err := r.ParseForm(); err != nil {
-		log.Println(fmt.Sprintf("ParseForm() err: %v", err))
-		return
-	}
-
-	phone := r.FormValue("phone")
-	accounts, err := h.Accounts(&phone)
-	if err != nil {
-		log.Println(fmt.Sprintf("login error: %v", err.Error()))
-		return
-	}
-
-	if n, err := strconv.Atoi(phone); err == nil {
-		h.Config.Login = n
-		h.Config.WriteConfig()
-	}
-
-	h.UserAccounts = accounts
-	data := AccountsPageData{accounts, phone, ingressPath, ""}
-
-	tmpl, err := h.TemplateFs.ReadFile("templates/accounts.html")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	t, err := template.New("t").Parse(string(tmpl))
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	t.Execute(w, data)
-}
-
-func (h *Handler) handleGetLogin(w http.ResponseWriter, r *http.Request, ingressPath string) {
-	tmpl, err := h.TemplateFs.ReadFile("templates/login.html")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	data := LoginPageData{"", strconv.Itoa(h.Config.Login), ingressPath}
-
-	t, err := template.New("t").Parse(string(tmpl))
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	t.Execute(w, data)
 }
 
 func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Request) {
@@ -325,7 +266,7 @@ func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) Accounts(username *string) (a []Account, err error) {
+func (h *Handler) Accounts(username *string) (a []auth.Account, err error) {
 	url := fmt.Sprintf(API_AUTH_LOGIN, *username)
 	// log.Println("/accountsHandler", url)
 
@@ -367,7 +308,7 @@ func (h *Handler) Accounts(username *string) (a []Account, err error) {
 		return nil, err
 	}
 
-	var accounts []Account
+	var accounts []auth.Account
 	if err = json.Unmarshal(body, &accounts); err != nil {
 		return nil, err
 	}
@@ -375,7 +316,7 @@ func (h *Handler) Accounts(username *string) (a []Account, err error) {
 	return accounts, nil
 }
 
-func (h *Handler) RequestCode(username *string, account Account) (result bool, err error) {
+func (h *Handler) RequestCode(username *string, account auth.Account) (result bool, err error) {
 	var (
 		body   []byte
 		client = http.DefaultClient
@@ -457,7 +398,7 @@ func (h *Handler) SendCode(r *http.Request) (authToken, refreshToken string, err
 		return "", "", fmt.Errorf("ProfileID is nil")
 	}
 
-	c := ConfirmationRequest{
+	c := auth.ConfirmationRequest{
 		Confirm1:     code,
 		Confirm2:     code,
 		SubscriberID: strconv.Itoa(h.Account.SubscriberID),
@@ -514,7 +455,7 @@ func (h *Handler) SendCode(r *http.Request) (authToken, refreshToken string, err
 	}
 
 	if resp.StatusCode == 200 {
-		var authResp AuthenticationResponse
+		var authResp auth.AuthenticationResponse
 		if err = json.Unmarshal(body, &authResp); err != nil {
 			return "", "", err
 		}

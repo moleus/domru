@@ -2,7 +2,7 @@ package auth
 
 import (
 	"fmt"
-	"github.com/ad/domru/handlers"
+	"github.com/ad/domru/pkg/sender"
 	"net/http"
 	"regexp"
 )
@@ -19,7 +19,7 @@ type PhoneNumberAuthenticator struct {
 	getSmsCode  SmsCodeGetter
 	operatorID  int
 
-	userAccounts []handlers.Account
+	userAccounts []Account
 }
 
 func NewPhoneNumberAuthenticator(phoneNumber string, getSmsCode SmsCodeGetter) *PhoneNumberAuthenticator {
@@ -64,31 +64,31 @@ func (a *PhoneNumberAuthenticator) Authenticate() (AuthenticationResponse, error
 	return response, nil
 }
 
-func (a *PhoneNumberAuthenticator) getUserAccounts() ([]handlers.Account, error) {
+func (a *PhoneNumberAuthenticator) getUserAccounts() ([]Account, error) {
 	authUrl := fmt.Sprintf("%s/auth/v2/login/%s", BaseURL, a.phoneNumber)
 
-	var accounts []handlers.Account
-	err := SendRequest(authUrl, http.MethodGet, nil, &accounts)
+	var accounts []Account
+	err := sender.NewUpstreamSender(authUrl).Send(http.MethodGet, &accounts)
 	if err != nil {
-		return []handlers.Account{}, fmt.Errorf("failed to check account: %w", err)
+		return []Account{}, fmt.Errorf("failed to check account: %w", err)
 	}
 	if len(accounts) == 0 {
-		return []handlers.Account{}, fmt.Errorf("empty response for accounts found for phone number %s", a.phoneNumber)
+		return []Account{}, fmt.Errorf("empty response for accounts found for phone number %s", a.phoneNumber)
 	}
 
 	return accounts, nil
 }
 
-func (a *PhoneNumberAuthenticator) requestConfirmationCode(account handlers.Account) error {
+func (a *PhoneNumberAuthenticator) requestConfirmationCode(account Account) error {
 	confirmUrl := fmt.Sprintf("%s/auth/v2/confirmation/%s", BaseURL, a.phoneNumber)
-	confirmRequest := &handlers.Account{
+	confirmRequest := &Account{
 		Address:      account.Address,
 		OperatorID:   account.OperatorID,
 		ProfileID:    account.ProfileID,
 		SubscriberID: account.SubscriberID,
 	}
 
-	err := SendRequest(confirmUrl, http.MethodPost, confirmRequest, nil)
+	err := sender.NewUpstreamSender(confirmUrl, sender.WithBody(confirmRequest)).Send(http.MethodPost, nil)
 	if err != nil {
 		return fmt.Errorf("failed to request confirmation code: %w", err)
 	}
@@ -106,7 +106,7 @@ func (a *PhoneNumberAuthenticator) sendConfirmationCode(smsCode string) (Authent
 		SubscriberID: "0",
 	}
 	var confirmResponse AuthenticationResponse
-	err := SendRequest(confirmUrl, http.MethodPost, confirmRequest, &confirmResponse)
+	err := sender.NewUpstreamSender(confirmUrl, sender.WithBody(confirmRequest)).Send(http.MethodPost, &confirmResponse)
 	if err != nil {
 		return AuthenticationResponse{}, fmt.Errorf("failed to send confirmation code: %w", err)
 	}

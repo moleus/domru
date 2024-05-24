@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/ad/domru/pkg/sender"
+	"net/http"
 	"time"
 )
 
@@ -33,7 +35,8 @@ func (a *PasswordAuthenticator) Authenticate() (AuthenticationResponse, error) {
 	body := generatePasswordAuthRequest(a.login, a.password)
 
 	var authResp AuthenticationResponse
-	err := SendRequest(getAuthPasswordUrl(a.login), "POST", body, &authResp)
+	url := getAuthPasswordUrl(a.login)
+	err := sender.NewUpstreamSender(url, sender.WithBody(body)).Send(http.MethodPost, &authResp)
 	if err != nil {
 		return AuthenticationResponse{}, fmt.Errorf("auth password request: %w", err)
 	}

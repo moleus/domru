@@ -1,5 +1,7 @@
 package handlers
 
+import "github.com/ad/domru/pkg/auth"
+
 const (
 	API_USER_AGENT   = "myHomeErth/8 CFNetwork/1209 Darwin/20.2.0"
 	CLIENT_USERAGENT = "iPhone11,6 | iOS 14.3 | erth | 6.4.6 (build 3) | %s | 2 | %s"
@@ -23,17 +25,8 @@ const (
 	API_OPERATORS         = "https://myhome.novotelecom.ru/public/v1/operators"
 )
 
-type Account struct {
-	AccountID    *string `json:"accountId"`
-	Address      string  `json:"address"`
-	OperatorID   int     `json:"operatorId"`
-	PlaceID      int     `json:"placeId"`
-	ProfileID    *string `json:"profileId"` // Use pointer to string for null value
-	SubscriberID int     `json:"subscriberId"`
-}
-
 type AccountsPageData struct {
-	Accounts      []Account
+	Accounts      []auth.Account
 	Phone         string
 	HassioIngress string
 	LoginError    string

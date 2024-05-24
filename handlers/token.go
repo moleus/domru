@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/ad/domru/pkg/auth"
 	"io"
 	"log"
 	"net/http"
@@ -52,7 +53,7 @@ func (h *Handler) Refresh(refreshToken *string) (string, string, error) {
 		return "", "", err
 	}
 
-	var authResp AuthenticationResponse
+	var authResp auth.AuthenticationResponse
 	if err = json.Unmarshal(body, &authResp); err != nil {
 		return "", "", err
 	}

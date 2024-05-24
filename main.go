@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"github.com/ad/domru/pkg/auth"
+	"github.com/ad/domru/pkg/token_provider"
 	"github.com/hashicorp/go-retryablehttp"
 	"log"
 	"net/http"
@@ -20,9 +22,12 @@ func main() {
 	httpClient := retryablehttp.NewClient()
 	httpClient.RetryMax = 5
 
-	tokenProvider := func() string {
-		return "token"
-	}
+	credentialsFile := "accounts.json"
+	// TODO: create BaseUrl
+
+	checkTokenUrl := "https://myhome.novotelecom.ru/rest/v1/forpost/server-time"
+	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
+	tokenProvider := token_provider.NewValidTokenProvider(credentialsStore, checkTokenUrl)
 
 	upstream, err := url.Parse("https://myhome.novotelecom.ru")
 	if err != nil {
@@ -55,7 +60,12 @@ func main() {
 		req.URL.Scheme = upstream.Scheme
 		req.URL.Host = upstream.Host
 		req.Host = upstream.Host
-		req.Header.Set("Authentication", tokenProvider())
+		token, err := tokenProvider.GetToken()
+		if err != nil {
+			log.Printf("Failed to get token: %s\n", err)
+			return
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
 		log.Printf("Proxying request to %s\n", req.URL)
 	}
 

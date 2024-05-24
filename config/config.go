@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-var ConfigFileName = "/share/domofon/account.json"
+var ConfigFileName = "/share/domofon/accounts.json"
 
 type Config struct {
 	Token        string `json:"token"`

@@ -23,3 +23,12 @@ type ConfirmationRequest struct {
 	ProfileID    string `json:"profileId"`
 	SubscriberID string `json:"subscriberId"`
 }
+
+type Account struct {
+	AccountID    *string `json:"accountId"`
+	Address      string  `json:"address"`
+	OperatorID   int     `json:"operatorId"`
+	PlaceID      int     `json:"placeId"`
+	ProfileID    *string `json:"profileId"` // Use pointer to string for null value
+	SubscriberID int     `json:"subscriberId"`
+}
