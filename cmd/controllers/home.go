@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"errors"
 	"github.com/ad/domru/cmd/models"
 	"github.com/ad/domru/pkg/home_assistant"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -18,6 +18,7 @@ func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
+	var errors []string
 	data := models.HomePageData{}
 
 	hostIP, haNetworkErr := home_assistant.GetHomeAssistantNetworkAddress()
@@ -28,30 +29,31 @@ func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
 	}
 
 	cameras, camerasErr := h.domruApi.RequestCameras()
-	if camerasErr == nil {
+	if camerasErr != nil {
+		errors = append(errors, camerasErr.Error())
+	} else {
 		data.Cameras = cameras
 	}
 
-	finances, financesErr := h.domruApi.RequestFinances()
-	if financesErr == nil {
-		data.Finances = finances
-	}
-
 	places, placesErr := h.domruApi.RequestPlaces()
-	if placesErr == nil {
+	if placesErr != nil {
+		errors = append(errors, placesErr.Error())
+	} else {
 		data.Places = places
 	}
 
 	data.Host = r.Host
-
 	if data.Scheme = r.URL.Scheme; data.Scheme == "" {
 		data.Scheme = "http"
 	}
 
+	errorsMessage := strings.Join(errors, "\n")
+
 	data.HassioIngress = r.Header.Get("X-Ingress-Path")
 	// TODO: set phone number
 	data.Phone = "TODO: set phone number"
-	data.LoginError = errors.Join(camerasErr, financesErr, placesErr).Error()
+
+	data.LoginError = errorsMessage
 
 	return data
 }

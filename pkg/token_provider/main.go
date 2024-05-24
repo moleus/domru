@@ -27,11 +27,12 @@ func NewValidTokenProvider(credentialsStore auth.CredentialsStore, checkTokenUrl
 }
 
 func (v *ValidTokenProvider) GetToken() (string, error) {
-	if !v.isTokenValid() {
-		if err := v.RefreshToken(); err != nil {
-			return "", fmt.Errorf("refresh expired token: %w", err)
-		}
-	}
+	// this check slows down the application a lot
+	//if !v.isTokenValid() {
+	//	if err := v.RefreshToken(); err != nil {
+	//		return "", fmt.Errorf("refresh expired token: %w", err)
+	//	}
+	//}
 
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
