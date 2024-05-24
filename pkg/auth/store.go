@@ -2,12 +2,13 @@ package auth
 
 import (
 	"encoding/json"
+	"github.com/ad/domru/pkg/domru/models"
 	"os"
 )
 
 type CredentialsStore interface {
-	SaveCredentials(credentials AuthenticationResponse) error
-	LoadCredentials() (AuthenticationResponse, error)
+	SaveCredentials(credentials models.AuthenticationResponse) error
+	LoadCredentials() (models.AuthenticationResponse, error)
 }
 
 type FileCredentialsStore struct {
@@ -18,7 +19,7 @@ func NewFileCredentialsStore(filePath string) *FileCredentialsStore {
 	return &FileCredentialsStore{filePath: filePath}
 }
 
-func (f *FileCredentialsStore) SaveCredentials(credentials AuthenticationResponse) error {
+func (f *FileCredentialsStore) SaveCredentials(credentials models.AuthenticationResponse) error {
 	file, err := os.OpenFile(f.filePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
@@ -29,18 +30,18 @@ func (f *FileCredentialsStore) SaveCredentials(credentials AuthenticationRespons
 	return encoder.Encode(credentials)
 }
 
-func (f *FileCredentialsStore) LoadCredentials() (AuthenticationResponse, error) {
+func (f *FileCredentialsStore) LoadCredentials() (models.AuthenticationResponse, error) {
 	file, err := os.Open(f.filePath)
 	if err != nil {
-		return AuthenticationResponse{}, err
+		return models.AuthenticationResponse{}, err
 	}
 	defer file.Close()
 
-	var credentials AuthenticationResponse
+	var credentials models.AuthenticationResponse
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&credentials)
 	if err != nil {
-		return AuthenticationResponse{}, err
+		return models.AuthenticationResponse{}, err
 	}
 
 	return credentials, nil

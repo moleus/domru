@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ad/domru/pkg/domru"
+	"github.com/ad/domru/pkg/domru/constants"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +12,17 @@ import (
 	"strings"
 	"time"
 )
+
+type HAConfig struct {
+	Result string `json:"result"`
+	Data   struct {
+		Interfaces []struct {
+			Ipv4 struct {
+				Address []string `json:"address"`
+			} `json:"ipv4"`
+		} `json:"interfaces"`
+	} `json:"data"`
+}
 
 func GetHomeAssistantNetworkAddress() (string, error) {
 	var (
@@ -28,7 +39,7 @@ func GetHomeAssistantNetworkAddress() (string, error) {
 		return "", fmt.Errorf("supervisor token not set")
 	}
 
-	url := domru.API_HA_NETWORK
+	url := constants.API_HA_NETWORK
 
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -65,7 +76,7 @@ func GetHomeAssistantNetworkAddress() (string, error) {
 
 	// log.Println(string(body))
 
-	var haconfig domru.HAConfig
+	var haconfig HAConfig
 
 	if err := json.Unmarshal(body, &haconfig); err != nil {
 		return "", fmt.Errorf("supervisor ip Unmarshal %s", err.Error())

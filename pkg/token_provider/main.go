@@ -3,7 +3,9 @@ package token_provider
 import (
 	"fmt"
 	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/domru"
+	"github.com/ad/domru/pkg/domru/constants"
+	"github.com/ad/domru/pkg/domru/helpers"
+	"github.com/ad/domru/pkg/domru/models"
 	"log"
 	"net/http"
 )
@@ -45,9 +47,9 @@ func (v *ValidTokenProvider) RefreshToken() error {
 		return fmt.Errorf("load credentials: %w", err)
 	}
 
-	var refreshTokenResponse auth.AuthenticationResponse
-	err = domru.NewUpstreamRequest(domru.API_REFRESH_SESSION,
-		domru.WithHeader("Bearer", credentials.RefreshToken),
+	var refreshTokenResponse models.AuthenticationResponse
+	err = helpers.NewUpstreamRequest(constants.API_REFRESH_SESSION,
+		helpers.WithHeader("Bearer", credentials.RefreshToken),
 	).Send(http.MethodGet, &refreshTokenResponse)
 	if err != nil {
 		return fmt.Errorf("send request to refresh token: %w", err)
@@ -67,7 +69,7 @@ func (v *ValidTokenProvider) isTokenValid() bool {
 		return false
 	}
 
-	err = domru.NewUpstreamRequest(v.checkTokenUrl, domru.WithTokenString(credentials.AccessToken)).Send(http.MethodGet, nil)
+	err = helpers.NewUpstreamRequest(v.checkTokenUrl, helpers.WithTokenString(credentials.AccessToken)).Send(http.MethodGet, nil)
 	if err != nil {
 		log.Printf("error while checking token: %v", err)
 		return false

@@ -4,7 +4,8 @@ import (
 	"embed"
 	"github.com/ad/domru/cmd/controllers"
 	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/authorized_sender"
+	"github.com/ad/domru/pkg/domru"
+	"github.com/ad/domru/pkg/domru/constants"
 	"github.com/ad/domru/pkg/token_provider"
 	"github.com/hashicorp/go-retryablehttp"
 	"log"
@@ -13,30 +14,27 @@ import (
 	"net/url"
 )
 
+const checkTokenUrl = "https://myhome.novotelecom.ru/rest/v1/forpost/server-time"
+const credentialsFile = "accounts.json"
+const listenAddr = ":8082"
+
 //go:embed templates/*
 var templateFs embed.FS
 
 func main() {
-	listenAddr := ":8082"
-	// Init Config
-	//addonConfig := config.InitConfig()
 
 	httpClient := retryablehttp.NewClient()
 	httpClient.RetryMax = 5
 
-	credentialsFile := "accounts.json"
-
-	checkTokenUrl := "https://myhome.novotelecom.ru/rest/v1/forpost/server-time"
 	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
 	tokenProvider := token_provider.NewValidTokenProvider(credentialsStore, checkTokenUrl)
-
-	authClient := authorized_sender.NewAuthorizedClient(
+	authClient := domru.NewAuthorizedClient(
 		tokenProvider,
-		authorized_sender.WithClient(httpClient.StandardClient()))
+		domru.WithClient(httpClient.StandardClient()))
+	domruAPI := domru.NewDomruAPI(authClient)
+	handlers := controllers.NewHandlers(templateFs, credentialsStore, domruAPI)
 
-	handlers := controllers.NewHandlers(templateFs)
-
-	upstream, err := url.Parse("https://myhome.novotelecom.ru")
+	upstream, err := url.Parse(constants.BaseUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,9 +58,10 @@ func main() {
 		}
 	})
 
-	mux.HandleFunc("/pages/home.html", handlers.HomeHandler)
+	mux.HandleFunc("/pages/home.html", checkCredentialsMiddleware(credentialsStore, handlers.HomeHandler))
+	mux.HandleFunc("/pages/login.html", handlers.LoginHandler)
 
-	// TODO: add middleware to check if credentials are set
+	// TODO: add middleware to check if credentials are set and redirect to login page if not
 
 	log.Printf("Listening on %s\n", listenAddr)
 	err = http.ListenAndServe(listenAddr, mux)
@@ -92,5 +91,16 @@ func addUpstreamAPIPrefix(proxy *httputil.ReverseProxy) http.HandlerFunc {
 		log.Printf("Adding prefix request to %s\n", r.URL)
 		r.URL.Path = "/rest/v1" + r.URL.Path
 		proxy.ServeHTTP(w, r)
+	}
+}
+
+func checkCredentialsMiddleware(credentialsStore auth.CredentialsStore, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		credentials, err := credentialsStore.LoadCredentials()
+		if err != nil || credentials.RefreshToken == "" {
+			http.Redirect(w, r, "/pages/login.html", http.StatusSeeOther)
+			return
+		}
+		next.ServeHTTP(w, r)
 	}
 }

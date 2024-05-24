@@ -3,20 +3,24 @@ package controllers
 import (
 	"embed"
 	"fmt"
+	"github.com/ad/domru/pkg/auth"
 	"github.com/ad/domru/pkg/domru"
 	"html/template"
 	"net/http"
 )
 
 type Handler struct {
-	domruApi *domru.API
+	domruApi         *domru.API
+	credentialsStore auth.CredentialsStore
 
 	TemplateFs embed.FS
 }
 
-func NewHandlers(templateFs embed.FS) (h *Handler) {
+func NewHandlers(templateFs embed.FS, credentialsStore auth.CredentialsStore, domruApi *domru.API) (h *Handler) {
 	h = &Handler{
-		TemplateFs: templateFs,
+		TemplateFs:       templateFs,
+		credentialsStore: credentialsStore,
+		domruApi:         domruApi,
 	}
 
 	return h

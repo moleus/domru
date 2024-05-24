@@ -2,19 +2,13 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"github.com/ad/domru/cmd/models"
-	"github.com/ad/domru/handlers"
+	"github.com/ad/domru/pkg/home_assistant"
+	"log"
 	"net/http"
-	"strconv"
 )
 
 func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
-	if h.Config.Token == "" || h.Config.RefreshToken == "" {
-		http.Redirect(w, r, r.Header.Get("X-Ingress-Path")+"/login", http.StatusSeeOther)
-		return
-	}
-
 	data := h.prepareHomePageData(r)
 
 	err := h.renderTemplate(w, "home", data)
@@ -26,8 +20,10 @@ func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
 	data := models.HomePageData{}
 
-	hostIP, haNetworkErr := handlers.GetHomeAssistantNetworkAddress()
-	if haNetworkErr == nil {
+	hostIP, haNetworkErr := home_assistant.GetHomeAssistantNetworkAddress()
+	if haNetworkErr != nil {
+		log.Printf("Failed to get Home Assistant network address: %v", haNetworkErr)
+	} else {
 		data.HostIP = hostIP
 	}
 
@@ -46,20 +42,16 @@ func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
 		data.Places = places
 	}
 
-	if data.Host = r.Host; data.Host == "" {
-		data.Host = fmt.Sprintf("%s:%s", data.HostIP, strconv.Itoa(h.Config.Port))
-	}
+	data.Host = r.Host
 
 	if data.Scheme = r.URL.Scheme; data.Scheme == "" {
 		data.Scheme = "http"
 	}
 
 	data.HassioIngress = r.Header.Get("X-Ingress-Path")
-	data.Port = strconv.Itoa(h.Config.Port)
-	data.Phone = strconv.Itoa(h.Config.Login)
-	data.Token = h.Config.Token
-	data.RefreshToken = h.Config.RefreshToken
-	data.LoginError = errors.Join(haNetworkErr, camerasErr, financesErr, placesErr).Error()
+	// TODO: set phone number
+	data.Phone = "TODO: set phone number"
+	data.LoginError = errors.Join(camerasErr, financesErr, placesErr).Error()
 
 	return data
 }
