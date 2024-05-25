@@ -45,26 +45,26 @@ func main() {
 	proxy.Client = authClient
 	proxyHandler := proxy.ProxyRequestHandler()
 
-	mux := http.NewServeMux()
 	// keep backwards compatibility
-	mux.HandleFunc("/stream", addUpstreamAPIPrefix(proxy))
-	mux.HandleFunc("/events", addUpstreamAPIPrefix(proxy))
-	mux.HandleFunc("/finances", addUpstreamAPIPrefix(proxy))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/stream/{cameraId}", handlers.StreamController)
+	http.HandleFunc("/events", addUpstreamAPIPrefix(proxy))
+	http.HandleFunc("/finances", addUpstreamAPIPrefix(proxy))
+	http.HandleFunc("/pages/home.html", checkCredentialsMiddleware(credentialsStore, handlers.HomeHandler))
+	http.HandleFunc("/pages/login.html", handlers.LoginHandler)
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
+			log.Printf("Proxying request to %s\n", r.URL)
 			proxyHandler(w, r)
 		} else {
 			http.Redirect(w, r, "/pages/home.html.tmpl", http.StatusMovedPermanently)
 		}
 	})
 
-	mux.HandleFunc("/pages/home.html", checkCredentialsMiddleware(credentialsStore, handlers.HomeHandler))
-	mux.HandleFunc("/pages/login.html", handlers.LoginHandler)
-
 	// TODO: add middleware to check if credentials are set and redirect to login page if not
 
 	log.Printf("Listening on %s\n", listenAddr)
-	err = http.ListenAndServe(listenAddr, mux)
+	err = http.ListenAndServe(listenAddr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
