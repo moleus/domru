@@ -113,9 +113,11 @@
                 <div class="table-body-cell"></div>
                 <div class="table-body-cell">
                         <pre>
+# Home Assistant configuration:
 rest_command:
     domru_open_door:
         url: {{ $openDoorUrl }}
+        method: post
 
 camera:
     - platform: generic

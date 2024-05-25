@@ -47,8 +47,6 @@ func main() {
 
 	// keep backwards compatibility
 	http.HandleFunc("/stream/{cameraId}", handlers.StreamController)
-	http.HandleFunc("/events", addUpstreamAPIPrefix(proxy))
-	http.HandleFunc("/finances", addUpstreamAPIPrefix(proxy))
 	http.HandleFunc("/pages/home.html", checkCredentialsMiddleware(credentialsStore, handlers.HomeHandler))
 	http.HandleFunc("/pages/login.html", handlers.LoginHandler)
 
@@ -67,14 +65,6 @@ func main() {
 	err = http.ListenAndServe(listenAddr, nil)
 	if err != nil {
 		log.Fatal(err)
-	}
-}
-
-func addUpstreamAPIPrefix(proxy *reverse_proxy.ReverseProxy) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Adding prefix request to %s\n", r.URL)
-		r.URL.Path = "/rest/v1" + r.URL.Path
-		proxy.ProxyRequestHandler()(w, r)
 	}
 }
 
