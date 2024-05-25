@@ -4,13 +4,14 @@ import (
 	"embed"
 	"github.com/ad/domru/cmd/controllers"
 	"github.com/ad/domru/pkg/auth"
+	"github.com/ad/domru/pkg/authorizedhttp"
 	"github.com/ad/domru/pkg/domru"
 	"github.com/ad/domru/pkg/domru/constants"
-	"github.com/ad/domru/pkg/token_provider"
+	"github.com/ad/domru/pkg/reverse_proxy"
+	"github.com/ad/domru/pkg/token_management"
 	"github.com/hashicorp/go-retryablehttp"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 )
 
@@ -22,15 +23,17 @@ const listenAddr = ":8082"
 var templateFs embed.FS
 
 func main() {
-
-	httpClient := retryablehttp.NewClient()
-	httpClient.RetryMax = 5
+	retryableClient := retryablehttp.NewClient()
+	retryableClient.RetryMax = 5
 
 	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
-	tokenProvider := token_provider.NewValidTokenProvider(credentialsStore, checkTokenUrl)
-	authClient := domru.NewAuthorizedClient(
+	tokenProvider := token_management.NewValidTokenProvider(credentialsStore, checkTokenUrl)
+	authClient := authorizedhttp.NewClient(
 		tokenProvider,
-		domru.WithClient(httpClient.StandardClient()))
+		tokenProvider,
+	)
+	authClient.DefaultClient = retryableClient.StandardClient()
+
 	domruAPI := domru.NewDomruAPI(authClient)
 	handlers := controllers.NewHandlers(templateFs, credentialsStore, domruAPI)
 
@@ -39,11 +42,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	proxy := getReverseProxy(upstream, tokenProvider)
-	defaultProxyHandler := func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Passing request to %s\n", r.URL)
-		proxy.ServeHTTP(w, r)
-	}
+	proxy := reverse_proxy.NewReverseProxy(upstream)
+	proxyHandler := proxy.ProxyRequestHandler()
 
 	mux := http.NewServeMux()
 	// keep backwards compatibility
@@ -52,7 +52,7 @@ func main() {
 	mux.HandleFunc("/finances", addUpstreamAPIPrefix(proxy))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
-			defaultProxyHandler(w, r)
+			proxyHandler(w, r)
 		} else {
 			http.Redirect(w, r, "/pages/home.html", http.StatusMovedPermanently)
 		}
@@ -70,27 +70,11 @@ func main() {
 	}
 }
 
-func getReverseProxy(upstream *url.URL, tokenProvider token_provider.TokenProvider) *httputil.ReverseProxy {
-	proxy := httputil.NewSingleHostReverseProxy(upstream)
-	proxy.Director = func(req *http.Request) {
-		log.Printf("Proxying request to %s\n", req.URL)
-		req.URL.Scheme = upstream.Scheme
-		req.URL.Host = upstream.Host
-		req.Host = upstream.Host
-		token, err := tokenProvider.GetToken()
-		if err != nil {
-			log.Printf("Failed to get token: %s\n", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	return proxy
-}
-
-func addUpstreamAPIPrefix(proxy *httputil.ReverseProxy) http.HandlerFunc {
+func addUpstreamAPIPrefix(proxy *reverse_proxy.ReverseProxy) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Adding prefix request to %s\n", r.URL)
 		r.URL.Path = "/rest/v1" + r.URL.Path
-		proxy.ServeHTTP(w, r)
+		proxy.ProxyRequestHandler()(w, r)
 	}
 }
 

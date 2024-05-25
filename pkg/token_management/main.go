@@ -1,4 +1,4 @@
-package token_provider
+package token_management
 
 import (
 	"fmt"
@@ -9,10 +9,6 @@ import (
 	"log"
 	"net/http"
 )
-
-type TokenProvider interface {
-	GetToken() (string, error)
-}
 
 type ValidTokenProvider struct {
 	credentialsStore auth.CredentialsStore

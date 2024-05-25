@@ -10,13 +10,13 @@ import (
 )
 
 type Handler struct {
-	domruApi         *domru.API
+	domruApi         *domru.APIWrapper
 	credentialsStore auth.CredentialsStore
 
 	TemplateFs embed.FS
 }
 
-func NewHandlers(templateFs embed.FS, credentialsStore auth.CredentialsStore, domruApi *domru.API) (h *Handler) {
+func NewHandlers(templateFs embed.FS, credentialsStore auth.CredentialsStore, domruApi *domru.APIWrapper) (h *Handler) {
 	h = &Handler{
 		TemplateFs:       templateFs,
 		credentialsStore: credentialsStore,
