@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"github.com/ad/domru/pkg/domru/constants"
 	"github.com/ad/domru/pkg/domru/helpers"
 	"github.com/ad/domru/pkg/domru/models"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 )
 
 const (
-	BaseURL          = "https://myhome.novotelecom.ru"
 	phoneNumberRegex = `^\+7\d{10}$`
 )
 
@@ -66,7 +66,7 @@ func (a *PhoneNumberAuthenticator) Authenticate() (models.AuthenticationResponse
 }
 
 func (a *PhoneNumberAuthenticator) getUserAccounts() ([]models.Account, error) {
-	authUrl := fmt.Sprintf("%s/auth/v2/login/%s", BaseURL, a.phoneNumber)
+	authUrl := fmt.Sprintf("%s/auth/v2/login/%s", constants.BaseUrl, a.phoneNumber)
 
 	var accounts []models.Account
 	err := helpers.NewUpstreamRequest(authUrl).Send(http.MethodGet, &accounts)
@@ -81,7 +81,7 @@ func (a *PhoneNumberAuthenticator) getUserAccounts() ([]models.Account, error) {
 }
 
 func (a *PhoneNumberAuthenticator) requestConfirmationCode(account models.Account) error {
-	confirmUrl := fmt.Sprintf("%s/auth/v2/confirmation/%s", BaseURL, a.phoneNumber)
+	confirmUrl := fmt.Sprintf("%s/auth/v2/confirmation/%s", constants.BaseUrl, a.phoneNumber)
 	confirmRequest := &models.Account{
 		Address:      account.Address,
 		OperatorID:   account.OperatorID,
@@ -97,7 +97,7 @@ func (a *PhoneNumberAuthenticator) requestConfirmationCode(account models.Accoun
 }
 
 func (a *PhoneNumberAuthenticator) sendConfirmationCode(smsCode string) (models.AuthenticationResponse, error) {
-	confirmUrl := fmt.Sprintf("%s/auth/v2/auth/%s/confirmation", BaseURL, a.phoneNumber)
+	confirmUrl := fmt.Sprintf("%s/auth/v2/auth/%s/confirmation", constants.BaseUrl, a.phoneNumber)
 	confirmRequest := &models.ConfirmationRequest{
 		Confirm1:     smsCode,
 		Confirm2:     smsCode,

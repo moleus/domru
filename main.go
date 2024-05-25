@@ -15,7 +15,6 @@ import (
 	"net/url"
 )
 
-const checkTokenUrl = "https://myhome.novotelecom.ru/rest/v1/forpost/server-time"
 const credentialsFile = "accounts.json"
 const listenAddr = ":8082"
 
@@ -27,7 +26,7 @@ func main() {
 	retryableClient.RetryMax = 5
 
 	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
-	tokenProvider := token_management.NewValidTokenProvider(credentialsStore, checkTokenUrl)
+	tokenProvider := token_management.NewValidTokenProvider(credentialsStore)
 	authClient := authorizedhttp.NewClient(
 		tokenProvider,
 		tokenProvider,

@@ -11,13 +11,11 @@ import (
 
 type ValidTokenProvider struct {
 	credentialsStore auth.CredentialsStore
-	checkTokenUrl    string
 }
 
-func NewValidTokenProvider(credentialsStore auth.CredentialsStore, checkTokenUrl string) *ValidTokenProvider {
+func NewValidTokenProvider(credentialsStore auth.CredentialsStore) *ValidTokenProvider {
 	return &ValidTokenProvider{
 		credentialsStore: credentialsStore,
-		checkTokenUrl:    checkTokenUrl,
 	}
 }
 

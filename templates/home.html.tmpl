@@ -74,12 +74,15 @@
                 <div class="table-body-cell">Номер телефона:</div>
                 <div class="table-body-cell">+{{ .Phone }}</div>
             </div>
-            {{ with .Places.Data }}
-            {{ range $_, $element := . }}
-            {{ range $index, $ac := $element.Place.AccessControls }}
-            {{$snapshotUrl := getSnapshotUrl $.BaseUrl $element.Place.ID $ac.ID }}
-            {{$streamUrl := getCameraStreamUrl $.BaseUrl (index $.Cameras.Data $index).ID }}
-            {{$openDoorUrl := getOpenDoorUrl $.BaseUrl $element.Place.ID $ac.ID }}
+            {{ range $_, $placeEl := .Places.Data }}
+            {{ range $index, $ac := $placeEl.Place.AccessControls }}
+            {{$snapshotUrl := getSnapshotUrl $.BaseUrl $placeEl.Place.ID $ac.ID }}
+            {{$streamUrl := "Camera for this index not found ;("}}
+			{{ with (index $.Cameras.Data $index) }}
+                {{$streamUrl = getCameraStreamUrl $.BaseUrl .ID }}
+            {{ end }}
+            {{$openDoorUrl := getOpenDoorUrl $.BaseUrl $placeEl.Place.ID $ac.ID }}
+
             <div class="resp-table-row">
                 <div class="table-body-cell">Камера:</div>
                 <div class="table-body-cell">№ {{ (index $.Cameras.Data $index).ID }}</div>
@@ -122,7 +125,6 @@ camera:
                         </pre>
                 </div>
             </div>
-            {{ end }}
             {{ end }}
             {{ end }}
         </div>
