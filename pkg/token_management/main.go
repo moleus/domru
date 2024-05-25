@@ -43,7 +43,7 @@ func (v *ValidTokenProvider) RefreshToken() error {
 		return fmt.Errorf("send request to refresh token: %w", err)
 	}
 
-	err = v.credentialsStore.SaveCredentials(refreshTokenResponse)
+	err = v.credentialsStore.SaveCredentials(auth.NewCredentialsFromAuthResponse(refreshTokenResponse))
 	if err != nil {
 		return fmt.Errorf("save credentials: %w", err)
 	}

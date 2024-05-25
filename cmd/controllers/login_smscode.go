@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/ad/domru/pkg/auth"
 	"net/http"
 )
 
@@ -15,7 +16,7 @@ func (h *Handler) SubmitSmsCodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.credentialsStore.SaveCredentials(authResponse)
+	err = h.credentialsStore.SaveCredentials(auth.NewCredentialsFromAuthResponse(authResponse))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to save credentials: %v", err), http.StatusInternalServerError)
 		return

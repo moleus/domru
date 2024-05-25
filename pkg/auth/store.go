@@ -6,9 +6,23 @@ import (
 	"os"
 )
 
+type Credentials struct {
+	AccessToken  string
+	RefreshToken string
+	OperatorID   int
+}
+
+func NewCredentialsFromAuthResponse(authResponse models.AuthenticationResponse) Credentials {
+	return Credentials{
+		AccessToken:  authResponse.AccessToken,
+		RefreshToken: authResponse.RefreshToken,
+		OperatorID:   authResponse.OperatorID,
+	}
+}
+
 type CredentialsStore interface {
-	SaveCredentials(credentials models.AuthenticationResponse) error
-	LoadCredentials() (models.AuthenticationResponse, error)
+	SaveCredentials(credentials Credentials) error
+	LoadCredentials() (Credentials, error)
 }
 
 type FileCredentialsStore struct {
@@ -19,7 +33,7 @@ func NewFileCredentialsStore(filePath string) *FileCredentialsStore {
 	return &FileCredentialsStore{filePath: filePath}
 }
 
-func (f *FileCredentialsStore) SaveCredentials(credentials models.AuthenticationResponse) error {
+func (f *FileCredentialsStore) SaveCredentials(credentials Credentials) error {
 	file, err := os.OpenFile(f.filePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
@@ -30,18 +44,18 @@ func (f *FileCredentialsStore) SaveCredentials(credentials models.Authentication
 	return encoder.Encode(credentials)
 }
 
-func (f *FileCredentialsStore) LoadCredentials() (models.AuthenticationResponse, error) {
+func (f *FileCredentialsStore) LoadCredentials() (Credentials, error) {
 	file, err := os.Open(f.filePath)
 	if err != nil {
-		return models.AuthenticationResponse{}, err
+		return Credentials{}, err
 	}
 	defer file.Close()
 
-	var credentials models.AuthenticationResponse
+	var credentials Credentials
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&credentials)
 	if err != nil {
-		return models.AuthenticationResponse{}, err
+		return Credentials{}, err
 	}
 
 	return credentials, nil

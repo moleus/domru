@@ -49,6 +49,7 @@ All other requests are forwarded to Domru API. A few of them:
 | `/rest/v1/forpost/cameras`                                                  | GET    | Get cameras list   |
 | `/rest/v1/places/{placeId}/accesscontrols/{accessControlId}/actions`        | POST   | Open door          |
 | `/rest/v1/subscribers/profiles/finances`                                    | GET    | Get finances       |
+| `/rest/v1/subscribers/profiles`                                             | GET    | Get profile info   |
 | `/rest/v1/subscriberplaces`                                                 | GET    | Get places         |
 | `/rest/v1/places/{placeId}/accesscontrols/{accessControlId}/videosnapshots` | GET    | Get video snapshot |
 | `/rest/v1/forpost/cameras/{cameraId}/video`                                 | GET    | Get video stream   |

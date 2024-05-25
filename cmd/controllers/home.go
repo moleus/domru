@@ -42,11 +42,18 @@ func (h *Handler) prepareHomePageData(r *http.Request) (models.HomePageData, err
 		data.Places = places
 	}
 
+	subscriberProfiles, subscriberProfilesErr := h.domruApi.GetSubscriberProfile()
+	if subscriberProfilesErr != nil {
+		errors = append(errors, subscriberProfilesErr.Error())
+	} else {
+		if len(subscriberProfiles.SubscriberPhones) > 0 {
+			data.Phone = subscriberProfiles.SubscriberPhones[0].Number
+		}
+	}
+
 	errorsMessage := strings.Join(errors, "\n")
 
 	data.BaseUrl = h.determineBaseUrl(r)
-	// TODO: set phone number
-	data.Phone = "TODO: set phone number"
 	data.LoginError = errorsMessage
 
 	return data, nil

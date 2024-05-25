@@ -10,6 +10,8 @@ import (
 	"github.com/ad/domru/pkg/reverse_proxy"
 	"github.com/ad/domru/pkg/token_management"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"net/url"
@@ -21,7 +23,35 @@ const listenAddr = ":8082"
 //go:embed templates/*
 var templateFs embed.FS
 
+const (
+	flagAccessToken     = "token"
+	flagRefreshToken    = "refresh"
+	flagLogin           = "login"
+	flagOperator        = "operator"
+	flagPort            = "port"
+	flagCredentialsFile = "credentials"
+)
+
+func init() {
+	pflag.String(flagAccessToken, "", "dom.ru token")
+	pflag.String(flagRefreshToken, "", "dom.ru refresh token")
+	pflag.Int(flagLogin, 0, "dom.ru login or phone (i.e: 71231234567)")
+	pflag.Int(flagOperator, 0, "dom.ru operator")
+	pflag.Int(flagPort, 18000, "listen port")
+	pflag.String(flagCredentialsFile, "", "credentials file path (i.e: /usr/domofon/credentials.yaml")
+	pflag.Parse()
+
+	err := viper.BindPFlags(pflag.CommandLine)
+	if err != nil {
+		log.Fatalf("Unable to bind flags: %v", err)
+	}
+
+	viper.SetEnvPrefix("domru")
+	viper.AutomaticEnv()
+}
+
 func main() {
+
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.RetryMax = 5
 

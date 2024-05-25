@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/ad/domru/cmd/models"
+	"github.com/ad/domru/pkg/auth"
 	"net/http"
 )
 
@@ -15,8 +16,7 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 	accountId := r.FormValue("account_id")
 	password := r.FormValue("password")
 
-	// send request to domru api
-	credentials, err := h.domruApi.LoginWithPassword(accountId, password)
+	authResponse, err := h.domruApi.LoginWithPassword(accountId, password)
 	if err != nil {
 		errorMessage := fmt.Sprintf("failed to login with password: %v", err)
 		data := models.LoginPageData{LoginError: errorMessage, Phone: ""}
@@ -27,7 +27,7 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err = h.credentialsStore.SaveCredentials(credentials); err != nil {
+	if err = h.credentialsStore.SaveCredentials(auth.NewCredentialsFromAuthResponse(authResponse)); err != nil {
 		http.Error(w, fmt.Sprintf("failed to save credentials: %v", err), http.StatusInternalServerError)
 		return
 	}
