@@ -6,7 +6,6 @@ import (
 	"github.com/ad/domru/pkg/domru/constants"
 	"github.com/ad/domru/pkg/domru/helpers"
 	"github.com/ad/domru/pkg/domru/models"
-	"log"
 	"net/http"
 )
 
@@ -23,13 +22,6 @@ func NewValidTokenProvider(credentialsStore auth.CredentialsStore, checkTokenUrl
 }
 
 func (v *ValidTokenProvider) GetToken() (string, error) {
-	// this check slows down the application a lot
-	//if !v.isTokenValid() {
-	//	if err := v.RefreshToken(); err != nil {
-	//		return "", fmt.Errorf("refresh expired token: %w", err)
-	//	}
-	//}
-
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
 		return "", fmt.Errorf("load credentials: %w", err)
@@ -58,19 +50,4 @@ func (v *ValidTokenProvider) RefreshToken() error {
 	}
 
 	return nil
-}
-
-func (v *ValidTokenProvider) isTokenValid() bool {
-	credentials, err := v.credentialsStore.LoadCredentials()
-	if err != nil {
-		return false
-	}
-
-	err = helpers.NewUpstreamRequest(v.checkTokenUrl, helpers.WithTokenString(credentials.AccessToken)).Send(http.MethodGet, nil)
-	if err != nil {
-		log.Printf("error while checking token: %v", err)
-		return false
-	}
-
-	return true
 }

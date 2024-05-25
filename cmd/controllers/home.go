@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/ad/domru/cmd/models"
 	"github.com/ad/domru/pkg/home_assistant"
 	"log"
@@ -21,13 +22,6 @@ func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
 	var errors []string
 	data := models.HomePageData{}
 
-	hostIP, haNetworkErr := home_assistant.GetHomeAssistantNetworkAddress()
-	if haNetworkErr != nil {
-		log.Printf("Failed to get Home Assistant network address: %v", haNetworkErr)
-	} else {
-		data.HostIP = hostIP
-	}
-
 	cameras, camerasErr := h.domruApi.RequestCameras()
 	if camerasErr != nil {
 		errors = append(errors, camerasErr.Error())
@@ -42,18 +36,31 @@ func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
 		data.Places = places
 	}
 
-	data.Host = r.Host
-	if data.Scheme = r.URL.Scheme; data.Scheme == "" {
-		data.Scheme = "http"
-	}
-
 	errorsMessage := strings.Join(errors, "\n")
 
-	data.HassioIngress = r.Header.Get("X-Ingress-Path")
+	data.BaseUrl = h.determineBaseUrl(r)
 	// TODO: set phone number
 	data.Phone = "TODO: set phone number"
-
 	data.LoginError = errorsMessage
 
 	return data
+}
+
+func (h *Handler) determineBaseUrl(r *http.Request) string {
+	var scheme string
+	var host string
+
+	if scheme = r.URL.Scheme; scheme == "" {
+		scheme = "http"
+	}
+	haHost, haNetworkErr := home_assistant.GetHomeAssistantNetworkAddress()
+	if haNetworkErr != nil {
+		host = r.Host
+	}
+	ingressPath := r.Header.Get("X-Ingress-Path")
+	if ingressPath == "" && haHost != "" {
+		log.Printf("[WARNING] X-Ingress-Path header is empty, when using Home Assistant host %s", haHost)
+	}
+
+	return fmt.Sprintf("%s://%s%s", scheme, host, ingressPath)
 }

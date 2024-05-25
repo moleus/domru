@@ -50,7 +50,7 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	http.Redirect(w, r, "/pages/home.html", http.StatusSeeOther)
+	http.Redirect(w, r, "/pages/home.html.tmpl", http.StatusSeeOther)
 }
 
 func (h *Handler) handlePhoneInput(w http.ResponseWriter, r *http.Request, ingressPath string) error {

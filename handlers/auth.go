@@ -46,7 +46,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 				var tmpl []byte
 				var err error
-				if tmpl, err = h.TemplateFs.ReadFile("templates/accounts.html"); err != nil {
+				if tmpl, err = h.TemplateFs.ReadFile("templates/accounts.html.tmpl"); err != nil {
 					fmt.Println(err)
 				}
 
@@ -71,7 +71,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var tmpl []byte
 	var err error
-	if tmpl, err = h.TemplateFs.ReadFile("templates/login.html"); err != nil {
+	if tmpl, err = h.TemplateFs.ReadFile("templates/login.html.tmpl"); err != nil {
 		fmt.Println(err)
 	}
 
@@ -151,7 +151,7 @@ func (h *Handler) LoginAddressHandler(w http.ResponseWriter, r *http.Request) {
 
 	var tmpl []byte
 	var err error
-	if tmpl, err = h.TemplateFs.ReadFile("templates/sms.html"); err != nil {
+	if tmpl, err = h.TemplateFs.ReadFile("templates/sms.html.tmpl"); err != nil {
 		fmt.Println(err)
 	}
 

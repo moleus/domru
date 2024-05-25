@@ -43,6 +43,7 @@ func main() {
 	}
 
 	proxy := reverse_proxy.NewReverseProxy(upstream)
+	proxy.Client = authClient
 	proxyHandler := proxy.ProxyRequestHandler()
 
 	mux := http.NewServeMux()
@@ -54,7 +55,7 @@ func main() {
 		if r.URL.Path != "/" {
 			proxyHandler(w, r)
 		} else {
-			http.Redirect(w, r, "/pages/home.html", http.StatusMovedPermanently)
+			http.Redirect(w, r, "/pages/home.html.tmpl", http.StatusMovedPermanently)
 		}
 	})
 
@@ -82,7 +83,7 @@ func checkCredentialsMiddleware(credentialsStore auth.CredentialsStore, next htt
 	return func(w http.ResponseWriter, r *http.Request) {
 		credentials, err := credentialsStore.LoadCredentials()
 		if err != nil || credentials.RefreshToken == "" {
-			http.Redirect(w, r, "/pages/login.html", http.StatusSeeOther)
+			http.Redirect(w, r, "/pages/login.html.tmpl", http.StatusSeeOther)
 			return
 		}
 		next.ServeHTTP(w, r)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ad/domru/pkg/auth"
 	"github.com/ad/domru/pkg/domru"
+	"github.com/ad/domru/pkg/domru/constants"
 	"html/template"
 	"net/http"
 )
@@ -29,21 +30,29 @@ func NewHandlers(templateFs embed.FS, credentialsStore auth.CredentialsStore, do
 func (h *Handler) renderTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
 	w.Header().Set("Content-Type", "text/html")
 
-	tmpl, err := h.TemplateFs.ReadFile(fmt.Sprintf("templates/%s.html", templateName))
+	templateFile := fmt.Sprintf("templates/%s.html.tmpl", templateName)
+	tmpl, err := h.TemplateFs.ReadFile(templateFile)
 	if err != nil {
-		return fmt.Errorf("readfile templates/%s.html error: %w", templateName, err)
+		return fmt.Errorf("readfile %s: %w", templateFile, err)
 	}
 
-	t := template.New("t")
-	t, err = t.Parse(string(tmpl))
+	t, err := template.New(templateName).Funcs(getTemplateFunctions()).Parse(string(tmpl))
 	if err != nil {
-		return fmt.Errorf("parse templates/%s.html error: %w", templateName, err)
+		return fmt.Errorf("parse %s error: %w", templateFile, err)
 	}
 
 	err = t.Execute(w, data)
 	if err != nil {
-		return fmt.Errorf("execute templates/%s.html error: %w", templateName, err)
+		return fmt.Errorf("execute %s error: %w", templateFile, err)
 	}
 
 	return nil
+}
+
+func getTemplateFunctions() template.FuncMap {
+	return template.FuncMap{
+		"getSnapshotUrl":     constants.GetSnapshotUrl,
+		"getOpenDoorUrl":     constants.GetOpenDoorUrl,
+		"getCameraStreamUrl": constants.GetCameraStreamUrl,
+	}
 }
