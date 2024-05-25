@@ -14,14 +14,11 @@ func (h *Handler) StreamController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	streamUrl, err := h.domruApi.GetStreamUrl(cameraId)
+	streamUrl, err := h.domruApi.GetStreamUrl(cameraId, r.URL.Query())
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to get stream url: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = w.Write([]byte(streamUrl))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to write response: %v", err), http.StatusInternalServerError)
-	}
+	http.Redirect(w, r, streamUrl, http.StatusFound)
 }
