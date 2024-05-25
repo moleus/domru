@@ -16,18 +16,34 @@ const (
 type SmsCodeGetter func() (string, error)
 
 type PhoneNumberAuthenticator struct {
-	phoneNumber string
-	getSmsCode  SmsCodeGetter
-	operatorID  int
-
+	phoneNumber  string
 	userAccounts []models.Account
 }
 
-func NewPhoneNumberAuthenticator(phoneNumber string, getSmsCode SmsCodeGetter) *PhoneNumberAuthenticator {
+func NewPhoneNumberAuthenticator(phoneNumber string) *PhoneNumberAuthenticator {
 	return &PhoneNumberAuthenticator{
 		phoneNumber: phoneNumber,
-		getSmsCode:  getSmsCode,
 	}
+}
+
+func (a *PhoneNumberAuthenticator) RequestSmsCode(account models.Account) error {
+	if !a.isPhoneNumberValid() {
+		return fmt.Errorf("phone number is invalid format. It should be +7XXXXXXXXXX")
+	}
+
+	if err := a.requestConfirmationCode(account); err != nil {
+		return fmt.Errorf("failed to request confirmation code: %w", err)
+	}
+	return nil
+}
+
+func (a *PhoneNumberAuthenticator) SubmitSmsCode(code string) (models.AuthenticationResponse, error) {
+	response, err := a.sendConfirmationCode(code)
+	if err != nil {
+		return models.AuthenticationResponse{}, fmt.Errorf("failed to authenticate: %w", err)
+	}
+
+	return response, nil
 }
 
 func (a *PhoneNumberAuthenticator) isPhoneNumberValid() bool {
@@ -37,32 +53,6 @@ func (a *PhoneNumberAuthenticator) isPhoneNumberValid() bool {
 	}
 
 	return r.MatchString(a.phoneNumber)
-}
-
-func (a *PhoneNumberAuthenticator) Authenticate() (models.AuthenticationResponse, error) {
-	if !a.isPhoneNumberValid() {
-		return models.AuthenticationResponse{}, fmt.Errorf("phone number is invalid format. It should be +7XXXXXXXXXX")
-	}
-
-	accounts, err := a.getUserAccounts()
-	if err != nil {
-		return models.AuthenticationResponse{}, fmt.Errorf("failed to get user accounts: %w", err)
-	}
-
-	// send sms code request
-	a.requestConfirmationCode(accounts[0])
-
-	smsCode, err := a.getSmsCode()
-	if err != nil {
-		return models.AuthenticationResponse{}, fmt.Errorf("failed to get sms code: %w", err)
-	}
-
-	response, err := a.sendConfirmationCode(smsCode)
-	if err != nil {
-		return models.AuthenticationResponse{}, fmt.Errorf("failed to authenticate: %w", err)
-	}
-
-	return response, nil
 }
 
 func (a *PhoneNumberAuthenticator) getUserAccounts() ([]models.Account, error) {

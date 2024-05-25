@@ -5,21 +5,20 @@ import (
 )
 
 type AccountsPageData struct {
-	Accounts      []models.Account
-	Phone         string
-	HassioIngress string
-	LoginError    string
+	Accounts   []models.Account
+	Phone      string
+	BaseUrl    string
+	LoginError string
 }
 
 type LoginPageData struct {
-	LoginError    string
-	Phone         string
-	HassioIngress string
+	LoginError string
+	Phone      string
+	BaseUrl    string
 }
 
 type SMSPageData struct {
-	Phone         string
-	Index         string
-	HassioIngress string
-	LoginError    string
+	Phone      string
+	BaseUrl    string
+	LoginError string
 }

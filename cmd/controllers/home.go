@@ -1,29 +1,35 @@
 package controllers
 
 import (
-	"fmt"
+	errors2 "errors"
 	"github.com/ad/domru/cmd/models"
-	"github.com/ad/domru/pkg/home_assistant"
-	"log"
+	"github.com/ad/domru/pkg/authorizedhttp"
 	"net/http"
 	"strings"
 )
 
 func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
-	data := h.prepareHomePageData(r)
+	data, err := h.prepareHomePageData(r)
+	if errors2.As(err, &authorizedhttp.TokenRefreshError{}) {
+		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+		return
+	}
 
-	err := h.renderTemplate(w, "home", data)
+	err = h.renderTemplate(w, "home", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
+func (h *Handler) prepareHomePageData(r *http.Request) (models.HomePageData, error) {
 	var errors []string
 	data := models.HomePageData{}
 
 	cameras, camerasErr := h.domruApi.RequestCameras()
 	if camerasErr != nil {
+		if errors2.As(camerasErr, &authorizedhttp.TokenRefreshError{}) {
+			return data, camerasErr
+		}
 		errors = append(errors, camerasErr.Error())
 	} else {
 		data.Cameras = cameras
@@ -43,24 +49,5 @@ func (h *Handler) prepareHomePageData(r *http.Request) models.HomePageData {
 	data.Phone = "TODO: set phone number"
 	data.LoginError = errorsMessage
 
-	return data
-}
-
-func (h *Handler) determineBaseUrl(r *http.Request) string {
-	var scheme string
-	var host string
-
-	if scheme = r.URL.Scheme; scheme == "" {
-		scheme = "http"
-	}
-	haHost, haNetworkErr := home_assistant.GetHomeAssistantNetworkAddress()
-	if haNetworkErr != nil {
-		host = r.Host
-	}
-	ingressPath := r.Header.Get("X-Ingress-Path")
-	if ingressPath == "" && haHost != "" {
-		log.Printf("[WARNING] X-Ingress-Path header is empty, when using Home Assistant host %s", haHost)
-	}
-
-	return fmt.Sprintf("%s://%s%s", scheme, host, ingressPath)
+	return data, nil
 }

@@ -35,7 +35,8 @@ func (v *ValidTokenProvider) RefreshToken() error {
 	}
 
 	var refreshTokenResponse models.AuthenticationResponse
-	err = helpers.NewUpstreamRequest(constants.API_REFRESH_SESSION,
+	refreshUrl := fmt.Sprintf(constants.API_REFRESH_SESSION, constants.BaseUrl)
+	err = helpers.NewUpstreamRequest(refreshUrl,
 		helpers.WithHeader("Bearer", credentials.RefreshToken),
 	).Send(http.MethodGet, &refreshTokenResponse)
 	if err != nil {

@@ -150,8 +150,8 @@ figure {
     <main id="wrapper">
         <figure>
             <h1>Введите код из смс</h1>
-            <form action="{{ .HassioIngress }}/sms" method="post">
-                <input type="hidden" name="phone" value="{{ .Phone }}"><input type="hidden" name="{{ .Index }}" value="%s">
+            <form action="{{ .BaseUrl }}/sms" method="post">
+                <input type="hidden" name="phone" value="{{ .Phone }}"><input type="hidden" name="smsCode" value="%s">
                 <div class="group">      
                     <input type="text" required id="code" name="code" value="" placeholder="1234">
                     <span class="bar"></span>

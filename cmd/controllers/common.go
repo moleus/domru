@@ -6,7 +6,9 @@ import (
 	"github.com/ad/domru/pkg/auth"
 	"github.com/ad/domru/pkg/domru"
 	"github.com/ad/domru/pkg/domru/constants"
+	"github.com/ad/domru/pkg/home_assistant"
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -55,4 +57,22 @@ func getTemplateFunctions() template.FuncMap {
 		"getOpenDoorUrl":     constants.GetOpenDoorUrl,
 		"getCameraStreamUrl": constants.GetCameraStreamUrl,
 	}
+}
+func (h *Handler) determineBaseUrl(r *http.Request) string {
+	var scheme string
+	var host string
+
+	if scheme = r.URL.Scheme; scheme == "" {
+		scheme = "http"
+	}
+	haHost, haNetworkErr := home_assistant.GetHomeAssistantNetworkAddress()
+	if haNetworkErr != nil {
+		host = r.Host
+	}
+	ingressPath := r.Header.Get("X-Ingress-Path")
+	if ingressPath == "" && haHost != "" {
+		log.Printf("[WARNING] X-Ingress-Path header is empty, when using Home Assistant host %s", haHost)
+	}
+
+	return fmt.Sprintf("%s://%s%s", scheme, host, ingressPath)
 }

@@ -45,10 +45,13 @@ func main() {
 	proxy.Client = authClient
 	proxyHandler := proxy.ProxyRequestHandler()
 
-	// keep backwards compatibility
-	http.HandleFunc("/stream/{cameraId}", handlers.StreamController)
-	http.HandleFunc("/pages/home.html", checkCredentialsMiddleware(credentialsStore, handlers.HomeHandler))
-	http.HandleFunc("/pages/login.html", handlers.LoginHandler)
+	http.HandleFunc("GET /login", handlers.LoginPageHandler)
+	http.HandleFunc("POST /login", handlers.LoginPhoneInputHandler)
+	http.HandleFunc("GET /login/address", handlers.SelectAccountHandler)
+	http.HandleFunc("POST /loginWithPassword", handlers.LoginWithPasswordHandler)
+	http.HandleFunc("POST /sms", handlers.SubmitSmsCodeHandler)
+	http.HandleFunc("GET /stream/{cameraId}", handlers.StreamController)
+	http.HandleFunc("GET /pages/home.html", checkCredentialsMiddleware(credentialsStore, handlers.HomeHandler))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

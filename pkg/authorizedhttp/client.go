@@ -2,8 +2,21 @@ package authorizedhttp
 
 import (
 	myhttp "github.com/ad/domru/pkg/domru/http"
+	"log"
 	"net/http"
 )
+
+type TokenRefreshError struct {
+	Err error
+}
+
+func (e TokenRefreshError) Error() string {
+	return e.Err.Error()
+}
+
+func NewTokenRefreshError(err error) TokenRefreshError {
+	return TokenRefreshError{Err: err}
+}
 
 type TokenProvider interface {
 	GetToken() (string, error)
@@ -17,12 +30,15 @@ type Client struct {
 	DefaultClient  myhttp.HTTPClient
 	TokenProvider  TokenProvider
 	TokenRefresher TokenRefresher
+	loginUrl       string
 }
 
 func NewClient(tokenProvider TokenProvider, tokenRefresher TokenRefresher) *Client {
 	return &Client{
 		TokenProvider:  tokenProvider,
 		TokenRefresher: tokenRefresher,
+		DefaultClient:  http.DefaultClient,
+		loginUrl:       "/pages/login.html",
 	}
 }
 
@@ -43,7 +59,8 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		// Refresh the token
 		err = c.TokenRefresher.RefreshToken()
 		if err != nil {
-			return nil, err
+			log.Printf("Failed to refresh token. Redirecting to login page: %v", err)
+			return nil, NewTokenRefreshError(err)
 		}
 
 		// Retry the request with the new token

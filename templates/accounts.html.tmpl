@@ -155,7 +155,7 @@ figure {
                 {{ with .Accounts }}
                     {{ range $index, $element := . }}
                         {{ if $element.AccountID }}
-                        <a href="{{ $.HassioIngress }}/login/address?phone={{ $.Phone }}&index={{ $index }}" class="text-decoration-none">
+                        <a href="{{ $.BaseUrl }}/login/address?phone={{ $.Phone }}&accountId={{ $element.AccountID }}" class="text-decoration-none">
                             <li style="list-style: none; text-align: left">
                                 <div class="group">
                                     <strong>Договор: {{ $element.AccountID }}</strong>
