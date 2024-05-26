@@ -4,6 +4,7 @@ import (
 	myhttp "github.com/ad/domru/pkg/domru/http"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type TokenRefreshError struct {
@@ -30,11 +31,14 @@ type Client struct {
 	DefaultClient  myhttp.HTTPClient
 	TokenProvider  TokenProvider
 	TokenRefresher TokenRefresher
-	loginUrl       string
+
+	loginUrl   string
+	operatorId int
 }
 
-func NewClient(tokenProvider TokenProvider, tokenRefresher TokenRefresher) *Client {
+func NewClient(operatorId int, tokenProvider TokenProvider, tokenRefresher TokenRefresher) *Client {
 	return &Client{
+		operatorId:     operatorId,
 		TokenProvider:  tokenProvider,
 		TokenRefresher: tokenRefresher,
 		DefaultClient:  http.DefaultClient,
@@ -70,6 +74,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		}
 
 		req.Header.Set("Authorization", "Bearer "+newToken)
+		req.Header.Set("Operator", strconv.Itoa(c.operatorId))
 		resp, err = c.DefaultClient.Do(req)
 	}
 

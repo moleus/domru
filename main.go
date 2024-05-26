@@ -29,6 +29,7 @@ const (
 	flagLogin           = "login"
 	flagPort            = "port"
 	flagCredentialsFile = "credentials"
+	flagOperatorId      = "operator"
 )
 
 func initFlags() {
@@ -36,6 +37,7 @@ func initFlags() {
 	pflag.String(flagRefreshToken, "", "dom.ru refresh token")
 	pflag.Int(flagLogin, 0, "dom.ru login or phone (i.e: 71231234567)")
 	pflag.Int(flagPort, 18000, "listen port")
+	pflag.Int(flagOperatorId, 0, "operator id")
 	pflag.String(flagCredentialsFile, "", "credentials file path (i.e: /usr/domofon/credentials.yaml")
 	pflag.Parse()
 
@@ -51,7 +53,18 @@ func initFlags() {
 func main() {
 	initFlags()
 
+	if viper.GetString(flagCredentialsFile) == "" {
+		log.Printf("Credentials file is not set\n")
+		pflag.Usage()
+	}
+
+	if viper.GetInt(flagOperatorId) == 0 {
+		log.Printf("Operator id is not set. Set your value\n")
+		pflag.Usage()
+	}
+
 	listenAddr := fmt.Sprintf(":%d", viper.GetInt(flagPort))
+	operatorId := viper.GetInt(flagOperatorId)
 
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.RetryMax = 5
@@ -59,6 +72,7 @@ func main() {
 	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
 	tokenProvider := token_management.NewValidTokenProvider(credentialsStore)
 	authClient := authorizedhttp.NewClient(
+		operatorId,
 		tokenProvider,
 		tokenProvider,
 	)
