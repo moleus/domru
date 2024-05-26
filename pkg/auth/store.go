@@ -7,9 +7,9 @@ import (
 )
 
 type Credentials struct {
-	AccessToken  string
-	RefreshToken string
-	OperatorID   int
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	OperatorID   int    `json:"operatorId"`
 }
 
 func NewCredentialsFromAuthResponse(authResponse models.AuthenticationResponse) Credentials {
