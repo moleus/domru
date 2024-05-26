@@ -23,22 +23,22 @@ cp example.accounts.json accounts.json
 docker run --name moleus/domru:latest --rm -p 8080:8080 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:latest
 ```
 
+## Authentication
 open http://localhost:8080/login
 
-## Docker image
-
-You can find docker image in packages section of this GitHub repository or pull it
-using `docker pull ghcr.io/moleus/domru:latest`
+1. You can use your phone number and confirmation code from sms to login
+2. You can use login and password
 
 ## Custom API endpoints
 
 This application provides the following endpoints
 
-| Endpoint               | Method | Description       |
-|------------------------|--------|-------------------|
-| `/`, `pages/home.html` | GET    | Home Page         |
-| `/pages/login.html`    | GET    | Login Page        |   
-| `/stream/{cameraId}`   | GET    | View video stream |
+| Endpoint               | Method   | Description       |
+|------------------------|----------|-------------------|
+| `/`, `pages/home.html` | GET      | Home Page         |
+| `/login`    | GET      | Login Page        |   
+| `/stream/{cameraId}`   | GET      | View video stream |
+| `/login`               | GET/POST | Login             |
 
 ## Domru API endpoints
 

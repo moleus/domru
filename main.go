@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"github.com/ad/domru/cmd/controllers"
 	"github.com/ad/domru/pkg/auth"
 	"github.com/ad/domru/pkg/authorizedhttp"
@@ -18,7 +19,6 @@ import (
 )
 
 const credentialsFile = "accounts.json"
-const listenAddr = ":8082"
 
 //go:embed templates/*
 var templateFs embed.FS
@@ -27,16 +27,14 @@ const (
 	flagAccessToken     = "token"
 	flagRefreshToken    = "refresh"
 	flagLogin           = "login"
-	flagOperator        = "operator"
 	flagPort            = "port"
 	flagCredentialsFile = "credentials"
 )
 
-func init() {
+func initFlags() {
 	pflag.String(flagAccessToken, "", "dom.ru token")
 	pflag.String(flagRefreshToken, "", "dom.ru refresh token")
 	pflag.Int(flagLogin, 0, "dom.ru login or phone (i.e: 71231234567)")
-	pflag.Int(flagOperator, 0, "dom.ru operator")
 	pflag.Int(flagPort, 18000, "listen port")
 	pflag.String(flagCredentialsFile, "", "credentials file path (i.e: /usr/domofon/credentials.yaml")
 	pflag.Parse()
@@ -51,6 +49,9 @@ func init() {
 }
 
 func main() {
+	initFlags()
+
+	listenAddr := fmt.Sprintf(":%d", viper.GetInt(flagPort))
 
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.RetryMax = 5
@@ -88,13 +89,11 @@ func main() {
 			log.Printf("Proxying request to %s\n", r.URL)
 			proxyHandler(w, r)
 		} else {
-			http.Redirect(w, r, "/pages/home.html.tmpl", http.StatusMovedPermanently)
+			http.Redirect(w, r, "/pages/home.html", http.StatusMovedPermanently)
 		}
 	})
 
-	// TODO: add middleware to check if credentials are set and redirect to login page if not
-
-	log.Printf("Listening on %s\n", listenAddr)
+	log.Printf("Listening on %s\n", viper.GetInt(flagPort))
 	err = http.ListenAndServe(listenAddr, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -105,7 +104,7 @@ func checkCredentialsMiddleware(credentialsStore auth.CredentialsStore, next htt
 	return func(w http.ResponseWriter, r *http.Request) {
 		credentials, err := credentialsStore.LoadCredentials()
 		if err != nil || credentials.RefreshToken == "" {
-			http.Redirect(w, r, "/pages/login.html.tmpl", http.StatusSeeOther)
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 		next.ServeHTTP(w, r)

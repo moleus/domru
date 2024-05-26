@@ -13,6 +13,7 @@ builds:
 
 kos:
   - repository: ghcr.io/moleus/domru
+    main: .
     tags:
       - '{{.Version}}'
     bare: true
