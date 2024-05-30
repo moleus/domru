@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	tls "github.com/refraction-networking/utls"
 	"golang.org/x/net/http2"
@@ -16,17 +17,19 @@ var (
 	dialTimeout = time.Duration(15) * time.Second
 )
 
-var rawClientHello = []byte(`160301014f0100014b03039e1f01f61c78c3b8deb9493ccbda012264df07185d76529cac4a762e199ab9f320960c12a1de32373def288cf7606db6df1ba8a3c075925c49dbbb058926a2330e003a130213031301c02bc02fc02cc030cca9cca8009e009fccaac023c027c009c013c024c028c00ac0140067006b009c009d003c003d002f003500ff010000c80000001700150000126d79686f6d652e70726f70746563682e7275000b000403000102000a00160014001d0017001e0019001801000101010201030104002300000010000e000c02683208687474702f312e310016000000170000000d0030002e04030503060308070808081a081b081c0809080a080b080408050806040105010601030303010302040205020602002b00050403040303002d00020101003300260024001d002098b60204f9c28d4a1a235c557ef620712c0e64231649806e4b6d27d99de11d6e`)
-
 func getConnection(hostname string, addr string) (*tls.UConn, error) {
 	klw, err := os.OpenFile("./sslkeylogging.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("os.OpenFile error: %+v", err)
 	}
 	config := tls.Config{
-		ServerName:   hostname,
-		KeyLogWriter: klw,
+		ServerName:                  hostname,
+		InsecureSkipVerify:          true,
+		NextProtos:                  []string{"h2", "http/1.1"},
+		DynamicRecordSizingDisabled: true,
+		KeyLogWriter:                klw,
 	}
+
 	dialConn, err := net.DialTimeout("tcp", addr, dialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
@@ -34,9 +37,21 @@ func getConnection(hostname string, addr string) (*tls.UConn, error) {
 
 	uTlsConn := tls.UClient(dialConn, &config, tls.HelloCustom)
 
+	if err = uTlsConn.ApplyPreset(getSpec(hostname)); err != nil {
+		return nil, fmt.Errorf("uTlsConn.ApplyPreset error: %+v", err)
+	}
+
+	if err = uTlsConn.Handshake(); err != nil {
+		return nil, fmt.Errorf("uTlsConn.Handshake() error: %+v", err)
+	}
+
+	return uTlsConn, err
+}
+
+func getSpec(hostname string) *tls.ClientHelloSpec {
 	clientHelloSpec := &tls.ClientHelloSpec{
 		CipherSuites: []uint16{
-			0x1302,
+			tls.TLS_AES_256_GCM_SHA384, // 0x1302
 			0x1303,
 			0x1301,
 			0xc02b,
@@ -80,7 +95,7 @@ func getConnection(hostname string, addr string) (*tls.UConn, error) {
 					tls.CurveSECP256R1,
 					0x001e,
 					tls.CurveSECP521R1,
-					tls.CurveP384,
+					tls.CurveSECP384R1,
 					tls.FakeCurveFFDHE2048,
 					tls.FakeCurveFFDHE3072,
 					tls.FakeCurveFFDHE4096,
@@ -136,29 +151,25 @@ func getConnection(hostname string, addr string) (*tls.UConn, error) {
 			},
 			&tls.KeyShareExtension{
 				KeyShares: []tls.KeyShare{
+					//{
+					//	Group: tls.CurveX25519,
+					//	Data:  []byte{0x98, 0xb6, 0x02, 0x04, 0xf9, 0xc2, 0x8d, 0x4a, 0x1a, 0x23, 0x5c, 0x55, 0x7e, 0xf6, 0x20, 0x71, 0x2c, 0x0e, 0x64, 0x23, 0x16, 0x49, 0x80, 0x6e, 0x4b, 0x6d, 0x27, 0xd9, 0x9d, 0xe1, 0x1d, 0x6e},
+					//},
 					{
-						Group: tls.CurveX25519,
-						Data:  []byte{0x98, 0xb6, 0x02, 0x04, 0xf9, 0xc2, 0x8d, 0x4a, 0x1a, 0x23, 0x5c, 0x55, 0x7e, 0xf6, 0x20, 0x71, 0x2c, 0x0e, 0x64, 0x23, 0x16, 0x49, 0x80, 0x6e, 0x4b, 0x6d, 0x27, 0xd9, 0x9d, 0xe1, 0x1d, 0x6e},
+						Group: tls.CurveSECP384R1,
+						Data:  nil,
 					},
 				},
 			},
 		},
 		GetSessionID: nil,
 	}
+	return clientHelloSpec
+}
 
-	// do not use this particular spec in production
-
-	err = uTlsConn.ApplyPreset(clientHelloSpec)
-	if err != nil {
-		return nil, fmt.Errorf("uTlsConn.ApplyPreset error: %+v", err)
-	}
-
-	err = uTlsConn.Handshake()
-	if err != nil {
-		return nil, fmt.Errorf("uTlsConn.Handshake() error: %+v", err)
-	}
-
-	return uTlsConn, err
+func getJsonBody() string {
+	payload := `{"email": "asdlasd"}`
+	return payload
 }
 
 func makeRequest() {
@@ -166,7 +177,7 @@ func makeRequest() {
 	addr := "myhome.proptech.ru:443"
 	accountId := os.Getenv("ACCOUNT_ID")
 	url := fmt.Sprintf("https://myhome.proptech.ru/auth/v2/auth/%s/password", accountId)
-	req, err := http.NewRequest(http.MethodPost, url, nil)
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(getJsonBody())))
 	if err != nil {
 		log.Fatalf("http.NewRequest error: %+v", err)
 	}
@@ -186,6 +197,7 @@ func makeRequest() {
 		log.Fatalf("requestOverTLS error: %+v", err)
 	}
 	fmt.Printf("Response: %+v\n", resp)
+	fmt.Printf("Client header: %+v\n", req.Header)
 	fmt.Println("Server header:" + resp.Header.Get("Server"))
 }
 
