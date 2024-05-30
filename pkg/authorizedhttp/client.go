@@ -2,7 +2,7 @@ package authorizedhttp
 
 import (
 	myhttp "github.com/ad/domru/pkg/domru/http"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 )
@@ -31,6 +31,7 @@ type Client struct {
 	DefaultClient  myhttp.HTTPClient
 	TokenProvider  TokenProvider
 	TokenRefresher TokenRefresher
+	Logger         *slog.Logger
 
 	loginUrl   string
 	operatorId int
@@ -42,6 +43,7 @@ func NewClient(operatorId int, tokenProvider TokenProvider, tokenRefresher Token
 		TokenProvider:  tokenProvider,
 		TokenRefresher: tokenRefresher,
 		DefaultClient:  http.DefaultClient,
+		Logger:         slog.Default(),
 		loginUrl:       "/pages/login.html",
 	}
 }
@@ -56,14 +58,16 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 
 	resp, err := c.DefaultClient.Do(req)
 	if err != nil {
+		c.Logger.With("error", err).With("url", req.URL).With("method", req.Method).With("headers", req.Header).Warn("Failed to send request")
 		return nil, err
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		// Refresh the token
+		c.Logger.Debug("Token expired. Refreshing token...")
 		err = c.TokenRefresher.RefreshToken()
 		if err != nil {
-			log.Printf("Failed to refresh token. Redirecting to login page: %v", err)
+			c.Logger.Warn("Failed to refresh token. Redirecting to login page", err.Error())
 			return nil, NewTokenRefreshError(err)
 		}
 

@@ -8,17 +8,18 @@ import (
 	myhttp "github.com/ad/domru/pkg/domru/http"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
 )
 
 var defaultHeaders = map[string]string{
-	"Content-Type":    "application/json",
-	"Accept":          "application/json",
-	"User-Agent":      constants.CLIENT_USERAGENT,
+	"Content-Type": "application/json",
+	//"Accept":          "application/json",
+	"User-Agent":      constants.GetUserAgent("780000000000"),
 	"Connection":      "Keep-Alive",
-	"Accept-Encoding": "gzip, deflate",
+	"Accept-Encoding": "gzip",
 }
 
 type UpstreamRequest struct {
@@ -26,6 +27,7 @@ type UpstreamRequest struct {
 	url     string
 	body    interface{}
 	headers http.Header
+	logger  *slog.Logger
 }
 
 func NewUpstreamRequest(url string, options ...func(sender *UpstreamRequest)) *UpstreamRequest {
@@ -33,7 +35,7 @@ func NewUpstreamRequest(url string, options ...func(sender *UpstreamRequest)) *U
 	for key, value := range defaultHeaders {
 		headers.Add(key, value)
 	}
-	sender := &UpstreamRequest{url: url, headers: headers, body: nil, client: http.DefaultClient}
+	sender := &UpstreamRequest{url: url, headers: headers, body: nil, client: http.DefaultClient, logger: slog.Default()}
 
 	for _, option := range options {
 		option(sender)
@@ -56,6 +58,12 @@ func WithHeader(key string, value string) func(*UpstreamRequest) {
 func WithBody(body interface{}) func(*UpstreamRequest) {
 	return func(u *UpstreamRequest) {
 		u.body = body
+	}
+}
+
+func WithLogger(logger *slog.Logger) func(*UpstreamRequest) {
+	return func(u *UpstreamRequest) {
+		u.logger = logger
 	}
 }
 
@@ -83,7 +91,8 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 		if content, err = io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("failed to read response content: %w. Status code: %d", err, resp.StatusCode)
 		}
-		return fmt.Errorf("unexpected status code: %d. With content: %u", resp.StatusCode, string(content))
+		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_headers", u.headers).With("request_body", u.body).Debug("failed to send request")
+		return fmt.Errorf("unexpected status code: %d. With content: %s", resp.StatusCode, string(content)[:100])
 	}
 
 	log.Printf("Request to %s took %s\n", u.url, time.Since(startTime))
@@ -96,7 +105,8 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 	}
 
 	if decodeErr := json.NewDecoder(bytes.NewReader(content)).Decode(&output); decodeErr != nil {
-		return fmt.Errorf("failed to decode response. Body: '%s'. Error: %w. Response: %+v", content, decodeErr, resp)
+		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_body", u.body).Debug("failed to send request")
+		return fmt.Errorf("decode response. First 100 characters of body: '%s'. Error: %w", content[:100], decodeErr)
 	}
 	return nil
 }
@@ -115,8 +125,13 @@ func (u *UpstreamRequest) SendRequest(method string) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header = u.headers
+	for key, values := range u.headers {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
 
 	resp, err := u.client.Do(req)
+	u.logger.With("url", req.URL).With("method", req.Method).With("headers", req.Header).Debug("Sent request")
 	return resp, err
 }

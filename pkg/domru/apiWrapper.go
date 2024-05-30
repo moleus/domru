@@ -8,21 +8,25 @@ import (
 	myhttp "github.com/ad/domru/pkg/domru/http"
 	"github.com/ad/domru/pkg/domru/models"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 )
 
 type APIWrapper struct {
+	Logger     *slog.Logger
 	baseUrl    string
 	authClient myhttp.HTTPClient
 }
 
 func NewDomruAPI(authClient myhttp.HTTPClient) *APIWrapper {
-	return &APIWrapper{authClient: authClient, baseUrl: constants.BaseUrl}
+	return &APIWrapper{authClient: authClient, baseUrl: constants.BaseUrl, Logger: slog.Default()}
 }
 
 func (w *APIWrapper) LoginWithPassword(accountId, password string) (models.AuthenticationResponse, error) {
+
 	authenticator := auth.NewPasswordAuthenticator(accountId, password)
+	authenticator.Logger = w.Logger
 
 	return authenticator.Authenticate()
 }

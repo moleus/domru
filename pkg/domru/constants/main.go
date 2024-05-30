@@ -3,8 +3,8 @@ package constants
 import "fmt"
 
 const (
-	BaseUrl          = "https://myhome.novotelecom.ru"
-	CLIENT_USERAGENT = "iPhone11,6 | iOS 14.3 | erth | 6.4.6 (build 3) | %s | 2 | %s"
+	BaseUrl            = "https://myhome.novotelecom.ru"
+	USERAGENT_TEMPLATE = "Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200)"
 
 	API_HA_NETWORK = "http://supervisor/network/info"
 
@@ -26,6 +26,11 @@ const (
 
 	CUSTOM_STREAM_URL = "%s/stream/%d"
 )
+
+func GetUserAgent(login string) string {
+	return USERAGENT_TEMPLATE
+	//return fmt.Sprintf(USERAGENT_TEMPLATE, login, "f3fbe9cc-e969-4282-9835-a9cb5c94eb79")
+}
 
 func GetSnapshotUrl(baseUrl string, placeId, accessControlId int) string {
 	return fmt.Sprintf(API_VIDEO_SNAPSHOT, baseUrl, placeId, accessControlId)

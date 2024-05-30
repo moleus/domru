@@ -6,22 +6,27 @@ import (
 	"github.com/ad/domru/pkg/domru/constants"
 	"github.com/ad/domru/pkg/domru/helpers"
 	"github.com/ad/domru/pkg/domru/models"
+	"log/slog"
 	"net/http"
 )
 
 type ValidTokenProvider struct {
+	Logger           *slog.Logger
 	credentialsStore auth.CredentialsStore
 }
 
 func NewValidTokenProvider(credentialsStore auth.CredentialsStore) *ValidTokenProvider {
-	return &ValidTokenProvider{
+	v := &ValidTokenProvider{
 		credentialsStore: credentialsStore,
+		Logger:           slog.Default(),
 	}
+	return v
 }
 
 func (v *ValidTokenProvider) GetToken() (string, error) {
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
+		v.Logger.Warn("load credentials", err.Error())
 		return "", fmt.Errorf("load credentials: %w", err)
 	}
 
@@ -29,6 +34,7 @@ func (v *ValidTokenProvider) GetToken() (string, error) {
 }
 
 func (v *ValidTokenProvider) RefreshToken() error {
+	v.Logger.Debug("refreshing token...")
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
 		return fmt.Errorf("load credentials: %w", err)

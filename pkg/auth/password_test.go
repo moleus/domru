@@ -8,16 +8,19 @@ import (
 func TestGeneratePasswordAuthRequest(t *testing.T) {
 	login := "780000000000"
 	password := "secret"
-	earthTimestamp := "20220825193046"
+	parsedTime, err := time.Parse(TimestampLayout, "2022-08-25T19:30:46.409Z")
+	if err != nil {
+		t.Errorf("Failed to parse time: %v", err)
+	}
+	timestamp := parsedTime.Format(TimestampLayout)
 
-	request := generatePasswordAuthRequest(login, password)
+	request := generatePasswordAuthRequest(parsedTime, login, password)
 
 	if request.Login != login {
 		t.Errorf("Expected login %s, but got %s", login, request.Login)
 	}
 
-	_, err := time.Parse("20060102150405", request.Timestamp)
-	if err != nil {
+	if request.Timestamp != timestamp {
 		t.Errorf("Timestamp is not in the correct format: %v", err)
 	}
 
@@ -25,7 +28,7 @@ func TestGeneratePasswordAuthRequest(t *testing.T) {
 		t.Errorf("Hash1 is not correct")
 	}
 
-	if hash2(login, password, earthTimestamp) != "9c81153e0c398180e7284d6b77c47d39" {
+	if request.Hash2 != "9c81153e0c398180e7284d6b77c47d39" {
 		t.Errorf("Hash2 is not correct")
 	}
 }

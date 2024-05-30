@@ -8,11 +8,12 @@ import (
 	"github.com/ad/domru/pkg/domru/constants"
 	"github.com/ad/domru/pkg/home_assistant"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
 type Handler struct {
+	Logger           *slog.Logger
 	domruApi         *domru.APIWrapper
 	credentialsStore auth.CredentialsStore
 
@@ -22,6 +23,7 @@ type Handler struct {
 func NewHandlers(templateFs embed.FS, credentialsStore auth.CredentialsStore, domruApi *domru.APIWrapper) (h *Handler) {
 	h = &Handler{
 		TemplateFs:       templateFs,
+		Logger:           slog.Default(),
 		credentialsStore: credentialsStore,
 		domruApi:         domruApi,
 	}
@@ -71,7 +73,7 @@ func (h *Handler) determineBaseUrl(r *http.Request) string {
 	}
 	ingressPath := r.Header.Get("X-Ingress-Path")
 	if ingressPath == "" && haHost != "" {
-		log.Printf("[WARNING] X-Ingress-Path header is empty, when using Home Assistant host %s", haHost)
+		h.Logger.Warn("X-Ingress-Path header is empty, when using Home Assistant host %s", haHost)
 	}
 
 	return fmt.Sprintf("%s://%s%s", scheme, host, ingressPath)
