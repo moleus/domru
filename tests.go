@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/hex"
 	"fmt"
 	tls "github.com/refraction-networking/utls"
 	"golang.org/x/net/http2"
@@ -34,13 +33,6 @@ func getConnection(hostname string, addr string) (*tls.UConn, error) {
 	}
 
 	uTlsConn := tls.UClient(dialConn, &config, tls.HelloCustom)
-
-	fingerprinter := &tls.Fingerprinter{}
-	helloBytes := make([]byte, hex.DecodedLen(len(rawClientHello)))
-	_, err = hex.Decode(helloBytes, rawClientHello)
-	if err != nil {
-		return nil, fmt.Errorf("hex.Decode error: %+v", err)
-	}
 
 	clientHelloSpec := &tls.ClientHelloSpec{
 		CipherSuites: []uint16{
@@ -86,12 +78,11 @@ func getConnection(hostname string, addr string) (*tls.UConn, error) {
 				Curves: []tls.CurveID{
 					tls.CurveX25519,
 					tls.CurveSECP256R1,
-					0x001d,
+					0x001e,
 					tls.CurveSECP521R1,
 					tls.CurveP384,
 					tls.FakeCurveFFDHE2048,
 					tls.FakeCurveFFDHE3072,
-					tls.FakeCurveFFDHE2048,
 					tls.FakeCurveFFDHE4096,
 					tls.FakeCurveFFDHE6144,
 					tls.FakeCurveFFDHE8192,
@@ -105,6 +96,7 @@ func getConnection(hostname string, addr string) (*tls.UConn, error) {
 			&tls.ALPNExtension{
 				AlpnProtocols: []string{"h2", "http/1.1"},
 			},
+			&FakeEncryptThenMacExtension{},
 			&tls.ExtendedMasterSecretExtension{},
 			&tls.SignatureAlgorithmsExtension{
 				SupportedSignatureAlgorithms: []tls.SignatureScheme{
@@ -154,27 +146,13 @@ func getConnection(hostname string, addr string) (*tls.UConn, error) {
 		GetSessionID: nil,
 	}
 
-	generatedSpec, err := fingerprinter.FingerprintClientHello(helloBytes)
+	// do not use this particular spec in production
+
+	err = uTlsConn.ApplyPreset(clientHelloSpec)
 	if err != nil {
-		return nil, fmt.Errorf("fingerprinter.FingerprintClientHello error: %+v", err)
-	}
-	if err := uTlsConn.ApplyPreset(generatedSpec); err != nil {
-		return nil, fmt.Errorf("uConn.ApplyPreset error: %+v", err)
+		return nil, fmt.Errorf("uTlsConn.ApplyPreset error: %+v", err)
 	}
 
-	// do not use this particular spec in production
-	// make sure to generate a separate copy of ClientHelloSpec for every connection
-	//spec, err := tls.UTLSIdToSpec(tls.HelloAndroid_11_OkHttp)
-	//// spec, err := tls.UTLSIdToSpec(tls.HelloFirefox_120)
-	//if err != nil {
-	//	return nil, fmt.Errorf("tls.UTLSIdToSpec error: %+v", err)
-	//}
-	//
-	//err = uTlsConn.ApplyPreset(&spec)
-	//if err != nil {
-	//	return nil, fmt.Errorf("uTlsConn.ApplyPreset error: %+v", err)
-	//}
-	//
 	err = uTlsConn.Handshake()
 	if err != nil {
 		return nil, fmt.Errorf("uTlsConn.Handshake() error: %+v", err)
