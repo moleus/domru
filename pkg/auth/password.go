@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/ad/domru/pkg/antiblock_client"
 	"github.com/ad/domru/pkg/domru/helpers"
 	"github.com/ad/domru/pkg/domru/models"
 	"log/slog"
@@ -43,7 +44,12 @@ func (a *PasswordAuthenticator) Authenticate() (models.AuthenticationResponse, e
 
 	var authResp models.AuthenticationResponse
 	url := getAuthPasswordUrl(a.login)
-	err := helpers.NewUpstreamRequest(url, helpers.WithBody(body), helpers.WithLogger(a.Logger)).Send(http.MethodPost, &authResp)
+	antiblockClient := antiblock_client.NewAntiblockClient()
+	err := helpers.NewUpstreamRequest(url,
+		helpers.WithBody(body),
+		helpers.WithLogger(a.Logger),
+		helpers.WithClient(antiblockClient),
+	).Send(http.MethodPost, &authResp)
 	if err != nil {
 		a.Logger.With("url", url).With("body", body).With("error", err).Error("auth password request")
 		return models.AuthenticationResponse{}, fmt.Errorf("auth password request: %w", err)

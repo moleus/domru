@@ -19,7 +19,7 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 	authResponse, err := h.domruApi.LoginWithPassword(accountId, password)
 	if err != nil {
 		h.Logger.Warn("failed to login with password", err.Error())
-		errorMessage := fmt.Sprintf("failed to login with password: %v", err)[:100]
+		errorMessage := fmt.Sprintf("failed to login with password: %v", err)
 		data := models.LoginPageData{LoginError: errorMessage, Phone: ""}
 		data.BaseUrl = h.determineBaseUrl(r)
 		if err = h.renderTemplate(w, "login", data); err != nil {

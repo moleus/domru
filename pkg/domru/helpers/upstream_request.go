@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ad/domru/pkg/domru/constants"
 	myhttp "github.com/ad/domru/pkg/domru/http"
 	"io"
 	"log"
@@ -15,11 +14,10 @@ import (
 )
 
 var defaultHeaders = map[string]string{
-	"Content-Type": "application/json",
-	//"Accept":          "application/json",
-	"User-Agent":      constants.GetUserAgent("780000000000"),
-	"Connection":      "Keep-Alive",
-	"Accept-Encoding": "gzip",
+	"user-agent":      "Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200) |  | null | 10c99d90-9899-4a25-926f-067b34bc4a7f | null",
+	"content-type":    "application/json; charset=UTF-8",
+	"connection":      "Keep-Alive",
+	"accept-encoding": "gzip",
 }
 
 type UpstreamRequest struct {
@@ -33,7 +31,7 @@ type UpstreamRequest struct {
 func NewUpstreamRequest(url string, options ...func(sender *UpstreamRequest)) *UpstreamRequest {
 	headers := make(http.Header)
 	for key, value := range defaultHeaders {
-		headers.Add(key, value)
+		headers.Set(key, value)
 	}
 	sender := &UpstreamRequest{url: url, headers: headers, body: nil, client: http.DefaultClient, logger: slog.Default()}
 
@@ -91,8 +89,8 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 		if content, err = io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("failed to read response content: %w. Status code: %d", err, resp.StatusCode)
 		}
-		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_headers", u.headers).With("request_body", u.body).Debug("failed to send request")
-		return fmt.Errorf("unexpected status code: %d. With content: %s", resp.StatusCode, string(content)[:100])
+		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_headers", u.headers).With("request_body", u.body).With("response_body", string(content)).Debug("failed to send request")
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	log.Printf("Request to %s took %s\n", u.url, time.Since(startTime))

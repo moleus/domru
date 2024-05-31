@@ -3,11 +3,14 @@ module github.com/ad/domru
 go 1.22
 
 require (
+	github.com/bogdanfinn/fhttp v0.5.28
+	github.com/bogdanfinn/tls-client v1.7.5
+	github.com/bogdanfinn/utls v1.6.1
 	github.com/hashicorp/go-retryablehttp v0.7.6
 	github.com/refraction-networking/utls v1.6.6
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	golang.org/x/net v0.23.0
+	github.com/useflyent/fhttp v0.0.0-20211004035111-333f430cfbbf
 )
 
 require (
@@ -20,16 +23,19 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
+	github.com/quic-go/quic-go v0.37.4 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/tam7t/hpkp v0.0.0-20160821193359-2b70b4024ed5 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

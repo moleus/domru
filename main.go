@@ -64,14 +64,10 @@ func main() {
 
 	logger := initLogger()
 
-	if viper.GetString(flagCredentialsFile) == "" {
-		logger.Error("Credentials file is not set")
-		pflag.Usage()
-	}
-
 	if viper.GetInt(flagOperatorId) == 0 {
 		logger.Error("Operator id is not set")
 		pflag.Usage()
+		os.Exit(1)
 	}
 
 	listenAddr := fmt.Sprintf(":%d", viper.GetInt(flagPort))
