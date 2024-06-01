@@ -16,7 +16,7 @@ import (
 
 const (
 	AuthPasswordUrl      = "https://myhome.proptech.ru/auth/v2/auth/%s/password"
-	TimestampLayout      = "2006-01-02T15:04:05.999Z"
+	TimestampLayout      = "2006-01-02T15:04:05Z"
 	EarthTimestampLayout = "20060102150405"
 )
 
@@ -39,7 +39,7 @@ func NewPasswordAuthenticator(login, password string) *PasswordAuthenticator {
 }
 
 func (a *PasswordAuthenticator) Authenticate() (models.AuthenticationResponse, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 	body := generatePasswordAuthRequest(now, a.login, a.password)
 
 	var authResp models.AuthenticationResponse
@@ -55,19 +55,21 @@ func (a *PasswordAuthenticator) Authenticate() (models.AuthenticationResponse, e
 		return models.AuthenticationResponse{}, fmt.Errorf("auth password request: %w", err)
 	}
 
+	a.Logger.With("url", url).With("body", body).With("response", authResp).Info("login successful")
+
 	return authResp, nil
 }
 
 type PasswordAuthRequest struct {
-	Login     string `json:"login"`
-	Timestamp string `json:"timestamp"`
 	Hash1     string `json:"hash1"`
 	Hash2     string `json:"hash2"`
+	Login     string `json:"login"`
+	Timestamp string `json:"timestamp"`
 }
 
-func generatePasswordAuthRequest(now time.Time, login, password string) PasswordAuthRequest {
-	timestamp := now.Format(TimestampLayout)
-	earthTimestamp := now.Format(EarthTimestampLayout)
+func generatePasswordAuthRequest(nowUtc time.Time, login, password string) PasswordAuthRequest {
+	timestamp := nowUtc.Format(TimestampLayout)
+	earthTimestamp := nowUtc.Format(EarthTimestampLayout)
 	hash1 := hash1(password)
 	hash2 := hash2(login, password, earthTimestamp)
 
