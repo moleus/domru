@@ -140,6 +140,10 @@ go install
 go mod tidy
 ```
 
+### Application architecture
+
+![Architecture](img/architecture.svg)
+
 ## 📘&nbsp; License
 
 Released under the terms of the [MIT License](LICENSE).
