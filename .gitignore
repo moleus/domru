@@ -12,3 +12,6 @@
 # File with credentials
 accounts.json
 account.json
+
+/domru
+/sslkeylogging.log
