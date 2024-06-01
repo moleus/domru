@@ -26,6 +26,8 @@ var templateFs embed.FS
 
 const (
 	flagPort            = "port"
+	flagRefreshToken    = "refresh-token"
+	flagOperatorId      = "operator-id"
 	flagCredentialsFile = "credentials"
 	flagLogLevel        = "log-level"
 )
@@ -34,6 +36,8 @@ func initFlags() {
 	pflag.Int(flagPort, 18000, "listen port")
 	pflag.String(flagCredentialsFile, "accounts.json", "credentials file path (i.e: /usr/domofon/credentials.json")
 	pflag.String(flagLogLevel, "info", "log level")
+	pflag.String(flagRefreshToken, "", "refresh token")
+	pflag.Int(flagOperatorId, 0, "operator id")
 	pflag.Parse()
 
 	err := viper.BindPFlags(pflag.CommandLine)
@@ -63,6 +67,9 @@ func main() {
 	retryableClient.RetryMax = 5
 
 	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
+
+	overrideCredentialsWithFlags(credentialsStore, logger)
+
 	authProvider := token_management.NewValidTokenProvider(credentialsStore)
 	authProvider.Logger = logger
 	authClient := authorizedhttp.NewClient(
@@ -109,6 +116,20 @@ func main() {
 	err = http.ListenAndServe(listenAddr, nil)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func overrideCredentialsWithFlags(credentialsStore *auth.FileCredentialsStore, logger *slog.Logger) {
+	if viper.GetString(flagRefreshToken) != "" && viper.GetInt(flagOperatorId) != 0 {
+		credentials := auth.Credentials{
+			AccessToken:  "",
+			RefreshToken: viper.GetString(flagRefreshToken),
+			OperatorID:   viper.GetInt(flagOperatorId),
+		}
+		err := credentialsStore.SaveCredentials(credentials)
+		if err != nil {
+			logger.Error("Unable to save credentials: %v", err)
+		}
 	}
 }
 

@@ -29,6 +29,59 @@ Please, don't use `latest` tag, because new update can break your setup
 docker run --name moleus/domru:%docker-tag% --rm -p 8080:8080 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:latest
 ```
 
+## In Kubernetes
+AFAIK refresh token doesn't expire, so we can store it in a secret and use it in the deployment. 
+
+And we need only 2 parameters to get all other credentials: operatorId and refresh token
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: domru-secrets
+  namespace: "{{ k8s_domru_namespace }}"
+type: Opaque
+data:
+  refresh: "{{ domru_refresh | b64encode }}"
+  operator: "{{ domru_operator | b64encode }}"
+```
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: domru
+  namespace: "{{ k8s_domru_namespace }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: domru
+  template:
+    metadata:
+      labels:
+        app: domru
+    spec:
+      containers:
+        - name: domru
+          image: "{{ domru_image_name }}:{{ domru_image_tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: DOMRU_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: domru-secrets
+                  key: refresh
+            - name: DOMRU_OPERATOR
+              valueFrom:
+                secretKeyRef:
+                  name: domru-secrets
+                  key: operator
+            - name: DOMRU_PORT
+              value: "80"
+```
+
 ## Authentication
 
 open http://localhost:8080/
