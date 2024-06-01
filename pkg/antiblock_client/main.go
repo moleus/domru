@@ -29,11 +29,17 @@ func NewAntiblockClient() *AntiblockClient {
 }
 
 func defaultClientOptions() []tlsclient.HttpClientOption {
+	// for wireshark HTTPS decrypt
+	//klw, err := os.OpenFile("./sslkeylogging.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	//if err != nil {
+	//	log.Fatalf("failed to open key log file: %v", err)
+	//}
 	jar := tlsclient.NewCookieJar()
 	return []tlsclient.HttpClientOption{
 		tlsclient.WithTimeoutSeconds(60),
 		tlsclient.WithClientProfile(profiles.ConfirmedAndroid),
 		tlsclient.WithCookieJar(jar),
+		//tlsclient.WithTransportOptions(&tlsclient.TransportOptions{KeyLogWriter: klw}),
 	}
 }
 
@@ -46,7 +52,7 @@ func (ac *AntiblockClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	defer body.Close()
 
-	var myBytes []byte
+	myBytes := make([]byte, req.ContentLength)
 
 	_, err = body.Read(myBytes)
 	if err != nil {
@@ -60,10 +66,9 @@ func (ac *AntiblockClient) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	fReq.Header = fhttp.Header{
-		"user-agent":      {"Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200) |  | null | 10c99d90-9899-4a25-926f-067b34bc4a7f | null"},
-		"content-type":    {"application/json; charset=UTF-8"},
-		"connection":      {"Keep-Alive"},
-		"accept-encoding": {"gzip"},
+		"user-agent":   {"Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200) |  | null | 10c99d90-9899-4a25-926f-067b34bc4a7f | null"},
+		"content-type": {"application/json; charset=UTF-8"},
+		"connection":   {"Keep-Alive"},
 		fhttp.HeaderOrderKey: {
 			"user-agent",
 			"content-type",

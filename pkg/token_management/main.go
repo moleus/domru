@@ -26,7 +26,7 @@ func NewValidTokenProvider(credentialsStore auth.CredentialsStore) *ValidTokenPr
 func (v *ValidTokenProvider) GetToken() (string, error) {
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
-		v.Logger.Warn("load credentials", err.Error())
+		v.Logger.Warn("load credentials %s", err.Error())
 		return "", fmt.Errorf("load credentials: %w", err)
 	}
 

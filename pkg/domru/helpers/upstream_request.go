@@ -20,6 +20,19 @@ var defaultHeaders = map[string]string{
 	"accept-encoding": "gzip",
 }
 
+type UpstreamError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *UpstreamError) Error() string {
+	return fmt.Sprintf("upstream error: %d, body: %s", e.StatusCode, e.Body)
+}
+
+func NewUpstreamError(statusCode int, body string) *UpstreamError {
+	return &UpstreamError{StatusCode: statusCode, Body: body}
+}
+
 type UpstreamRequest struct {
 	client  myhttp.HTTPClient
 	url     string
@@ -90,7 +103,7 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 			return fmt.Errorf("failed to read response content: %w. Status code: %d", err, resp.StatusCode)
 		}
 		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_headers", u.headers).With("request_body", u.body).With("response_body", string(content)).Debug("failed to send request")
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return NewUpstreamError(resp.StatusCode, string(content))
 	}
 
 	log.Printf("Request to %s took %s\n", u.url, time.Since(startTime))
@@ -99,7 +112,8 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 	}
 	content, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
-		return fmt.Errorf("failed to read response content: %w. Status code: %d", readErr, resp.StatusCode)
+		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_body", u.body).Debug("failed to read response content")
+		return NewUpstreamError(resp.StatusCode, "")
 	}
 
 	if decodeErr := json.NewDecoder(bytes.NewReader(content)).Decode(&output); decodeErr != nil {

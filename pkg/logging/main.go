@@ -35,10 +35,12 @@ func sanitize(msg string) string {
 	tokenRegex := regexp.MustCompile(`[a-z0-9]{30}`)
 	uuidRegex := regexp.MustCompile(`\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b`)
 	loginRegex := regexp.MustCompile(`\b\d{11}\b`)
+	accountIdRegex := regexp.MustCompile(`\b\d{12}\b`)
 
 	msg = tokenRegex.ReplaceAllString(msg, "**********")
 	msg = uuidRegex.ReplaceAllString(msg, "********-****-****-****-************")
 	msg = loginRegex.ReplaceAllString(msg, "***********")
+	msg = accountIdRegex.ReplaceAllString(msg, "************")
 
 	return msg
 }
