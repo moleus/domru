@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ad/domru/cmd/models"
 	"github.com/ad/domru/pkg/auth"
+	"github.com/ad/domru/pkg/domru/helpers"
 	"net/http"
 )
 
@@ -19,7 +21,16 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 	authResponse, err := h.domruApi.LoginWithPassword(accountId, password)
 	if err != nil {
 		h.Logger.Warn("failed to login with password", err.Error())
-		errorMessage := fmt.Sprintf("failed to login with password: %v", err)
+
+		var errorMessage string
+		var upstreamErr *helpers.UpstreamError
+		if errors.As(err, &upstreamErr) {
+			w.WriteHeader(upstreamErr.StatusCode)
+			errorMessage = fmt.Sprintf("upstream returned (hint: retry if 500): %s", upstreamErr.Body)
+		} else {
+			errorMessage = fmt.Sprintf("Internal error: %s", err.Error())
+		}
+
 		data := models.LoginPageData{LoginError: errorMessage, Phone: ""}
 		data.BaseUrl = h.determineBaseUrl(r)
 		if err = h.renderTemplate(w, "login", data); err != nil {
@@ -35,5 +46,5 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	http.Redirect(w, r, "/pages/home.html.tmpl", http.StatusSeeOther)
+	http.Redirect(w, r, "/pages/home.html", http.StatusSeeOther)
 }
