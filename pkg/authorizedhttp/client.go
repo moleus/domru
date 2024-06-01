@@ -23,33 +23,39 @@ type TokenProvider interface {
 	GetToken() (string, error)
 }
 
+type OperatorProvider interface {
+	GetOperatorId() (int, error)
+}
+
 type TokenRefresher interface {
 	RefreshToken() error
 }
 
 type Client struct {
 	DefaultClient  myhttp.HTTPClient
-	TokenProvider  TokenProvider
-	TokenRefresher TokenRefresher
+	tokenProvider  TokenProvider
+	tokenRefresher TokenRefresher
 	Logger         *slog.Logger
+
+	operatorProvider OperatorProvider
 
 	loginUrl   string
 	operatorId int
 }
 
-func NewClient(operatorId int, tokenProvider TokenProvider, tokenRefresher TokenRefresher) *Client {
+func NewClient(tokenProvider TokenProvider, tokenRefresher TokenRefresher, operatorProvider OperatorProvider) *Client {
 	return &Client{
-		operatorId:     operatorId,
-		TokenProvider:  tokenProvider,
-		TokenRefresher: tokenRefresher,
-		DefaultClient:  http.DefaultClient,
-		Logger:         slog.Default(),
-		loginUrl:       "/pages/login.html",
+		tokenProvider:    tokenProvider,
+		tokenRefresher:   tokenRefresher,
+		operatorProvider: operatorProvider,
+		DefaultClient:    http.DefaultClient,
+		Logger:           slog.Default(),
+		loginUrl:         "/pages/login.html",
 	}
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	token, err := c.TokenProvider.GetToken()
+	token, err := c.tokenProvider.GetToken()
 	if err != nil {
 		return nil, err
 	}
@@ -65,20 +71,27 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		// Refresh the token
 		c.Logger.Debug("Token expired. Refreshing token...")
-		err = c.TokenRefresher.RefreshToken()
+		err = c.tokenRefresher.RefreshToken()
 		if err != nil {
 			c.Logger.Warn("Failed to refresh token. Redirecting to login page", err.Error())
 			return nil, NewTokenRefreshError(err)
 		}
 
 		// Retry the request with the new token
-		newToken, err := c.TokenProvider.GetToken()
+		newToken, err := c.tokenProvider.GetToken()
 		if err != nil {
+			c.Logger.With("error", err).Warn("Failed to get new token")
+			return nil, err
+		}
+
+		operatorId, err := c.operatorProvider.GetOperatorId()
+		if err != nil {
+			c.Logger.With("error", err).Warn("Failed to get operator id")
 			return nil, err
 		}
 
 		req.Header.Set("Authorization", "Bearer "+newToken)
-		req.Header.Set("Operator", strconv.Itoa(c.operatorId))
+		req.Header.Set("Operator", strconv.Itoa(operatorId))
 		resp, err = c.DefaultClient.Do(req)
 	}
 

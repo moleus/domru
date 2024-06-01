@@ -23,6 +23,15 @@ func NewValidTokenProvider(credentialsStore auth.CredentialsStore) *ValidTokenPr
 	return v
 }
 
+func (v *ValidTokenProvider) GetOperatorId() (int, error) {
+	credentials, err := v.credentialsStore.LoadCredentials()
+	if err != nil {
+		return 0, fmt.Errorf("load credentials: %w", err)
+	}
+
+	return credentials.OperatorID, nil
+}
+
 func (v *ValidTokenProvider) GetToken() (string, error) {
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {

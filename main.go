@@ -25,21 +25,13 @@ import (
 var templateFs embed.FS
 
 const (
-	flagAccessToken     = "token"
-	flagRefreshToken    = "refresh"
-	flagLogin           = "login"
 	flagPort            = "port"
 	flagCredentialsFile = "credentials"
-	flagOperatorId      = "operator"
 	flagLogLevel        = "log-level"
 )
 
 func initFlags() {
-	pflag.String(flagAccessToken, "", "dom.ru token")
-	pflag.String(flagRefreshToken, "", "dom.ru refresh token")
-	pflag.Int(flagLogin, 0, "dom.ru login or phone (i.e: 71231234567)")
 	pflag.Int(flagPort, 18000, "listen port")
-	pflag.Int(flagOperatorId, 0, "operator id")
 	pflag.String(flagCredentialsFile, "accounts.json", "credentials file path (i.e: /usr/domofon/credentials.json")
 	pflag.String(flagLogLevel, "info", "log level")
 	pflag.Parse()
@@ -64,26 +56,19 @@ func main() {
 
 	logger := initLogger()
 
-	if viper.GetInt(flagOperatorId) == 0 {
-		logger.Error("Operator id is not set")
-		pflag.Usage()
-		os.Exit(1)
-	}
-
 	listenAddr := fmt.Sprintf(":%d", viper.GetInt(flagPort))
-	operatorId := viper.GetInt(flagOperatorId)
 	credentialsFile := viper.GetString(flagCredentialsFile)
 
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.RetryMax = 5
 
 	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
-	tokenProvider := token_management.NewValidTokenProvider(credentialsStore)
-	tokenProvider.Logger = logger
+	authProvider := token_management.NewValidTokenProvider(credentialsStore)
+	authProvider.Logger = logger
 	authClient := authorizedhttp.NewClient(
-		operatorId,
-		tokenProvider,
-		tokenProvider,
+		authProvider,
+		authProvider,
+		authProvider,
 	)
 	authClient.DefaultClient = retryableClient.StandardClient()
 	authClient.Logger = logger
