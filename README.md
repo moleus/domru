@@ -30,7 +30,7 @@ docker run --name moleus/domru:%docker-tag% --rm -p 8080:8080 -v $(pwd)/accounts
 ```
 
 ## In Kubernetes
-AFAIK refresh token doesn't expire, so we can store it in a secret and use it in the deployment. 
+AFAIK refresh token doesn't expire, so we can store it in a secret and use it in the deployment.
 
 And we need only 2 parameters to get all other credentials: operatorId and refresh token
 ```yaml
@@ -96,7 +96,7 @@ This application provides the following endpoints
 | Endpoint               | Method   | Description       |
 |------------------------|----------|-------------------|
 | `/`, `pages/home.html` | GET      | Home Page         |
-| `/login`               | GET      | Login Page        |   
+| `/login`               | GET      | Login Page        |
 | `/stream/{cameraId}`   | GET      | View video stream |
 | `/login`               | GET/POST | Login             |
 
@@ -124,6 +124,21 @@ All other requests are forwarded to Domru API. A few of them:
 Feel free to **file a new issue** with a respective title and description on
 the [moleus/domru](https://github.com/moleus/domru/issues) repository. If you already found a solution to your problem,
 **we would love to review your pull request**!
+
+## Development
+
+Setup pre-commit hooks
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+setup dependencies
+```bash
+go install
+go mod tidy
+```
 
 ## 📘&nbsp; License
 
