@@ -3,6 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"github.com/ad/domru/pkg/domru/models"
+	"github.com/ad/domru/pkg/domru/sanitizing_utils"
+	"log/slog"
 	"os"
 )
 
@@ -10,6 +12,14 @@ type Credentials struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 	OperatorID   int    `json:"operatorId"`
+}
+
+func (c Credentials) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("accessToken", sanitizing_utils.KeepFirstNCharacters(c.AccessToken, 4)),
+		slog.String("refreshToken", sanitizing_utils.KeepFirstNCharacters(c.RefreshToken, 4)),
+		slog.Int("operatorId", c.OperatorID),
+	)
 }
 
 func NewCredentialsFromAuthResponse(authResponse models.AuthenticationResponse) Credentials {

@@ -5,17 +5,17 @@ go 1.22
 require (
 	github.com/bogdanfinn/fhttp v0.5.28
 	github.com/bogdanfinn/tls-client v1.7.5
-	github.com/bogdanfinn/utls v1.6.1
 	github.com/hashicorp/go-retryablehttp v0.7.6
-	github.com/refraction-networking/utls v1.6.6
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	github.com/useflyent/fhttp v0.0.0-20211004035111-333f430cfbbf
+	github.com/stretchr/testify v1.8.4
 )
 
 require (
 	github.com/andybalholm/brotli v1.0.6 // indirect
+	github.com/bogdanfinn/utls v1.6.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -23,6 +23,7 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/quic-go/quic-go v0.37.4 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect

@@ -2,12 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 )
 
 func (h *Handler) StreamController(w http.ResponseWriter, r *http.Request) {
-	log.Printf("StreamController: %s %s", r.Method, r.URL.Path)
+	h.Logger.Debug("StreamController: %s %s", r.Method, r.URL.Path)
 	cameraId := r.PathValue("cameraId")
 	if cameraId == "" {
 		http.Error(w, "cameraId is required", http.StatusBadRequest)

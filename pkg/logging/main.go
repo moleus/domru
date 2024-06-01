@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"regexp"
+	"strings"
 )
 
 type SanitizingHandler struct {
@@ -37,7 +38,7 @@ func sanitize(msg string) string {
 	loginRegex := regexp.MustCompile(`\b\d{11}\b`)
 	accountIdRegex := regexp.MustCompile(`\b\d{12}\b`)
 
-	msg = tokenRegex.ReplaceAllString(msg, "**********")
+	msg = tokenRegex.ReplaceAllString(msg, strings.Repeat("*", 30))
 	msg = uuidRegex.ReplaceAllString(msg, "********-****-****-****-************")
 	msg = loginRegex.ReplaceAllString(msg, "***********")
 	msg = accountIdRegex.ReplaceAllString(msg, "************")

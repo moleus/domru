@@ -60,13 +60,6 @@ func (a *PasswordAuthenticator) Authenticate() (models.AuthenticationResponse, e
 	return authResp, nil
 }
 
-type PasswordAuthRequest struct {
-	Hash1     string `json:"hash1"`
-	Hash2     string `json:"hash2"`
-	Login     string `json:"login"`
-	Timestamp string `json:"timestamp"`
-}
-
 func generatePasswordAuthRequest(nowUtc time.Time, login, password string) PasswordAuthRequest {
 	timestamp := nowUtc.Format(TimestampLayout)
 	earthTimestamp := nowUtc.Format(EarthTimestampLayout)

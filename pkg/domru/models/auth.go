@@ -1,5 +1,9 @@
 package models
 
+import (
+	"log/slog"
+)
+
 type AuthenticationResponse struct {
 	AccessToken      string  `json:"accessToken"`
 	ExpiresIn        *int    `json:"expiresIn"`
@@ -26,4 +30,16 @@ type Account struct {
 	PlaceID      int     `json:"placeId"`
 	ProfileID    *string `json:"profileId"` // Use pointer to string for null value
 	SubscriberID int     `json:"subscriberId"`
+}
+
+func (a AuthenticationResponse) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("accessToken", "[REDACTED]"),
+		slog.Int("expiresIn", *a.ExpiresIn),
+		slog.Int("operatorId", a.OperatorID),
+		slog.String("operatorName", a.OperatorName),
+		slog.Int("refreshExpiresIn", *a.RefreshExpiresIn),
+		slog.String("refreshToken", "[REDACTED]"),
+		slog.String("tokenType", *a.TokenType),
+	)
 }
