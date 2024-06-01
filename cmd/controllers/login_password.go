@@ -41,7 +41,7 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err = h.credentialsStore.SaveCredentials(auth.NewCredentialsFromAuthResponse(authResponse)); err != nil {
-		h.Logger.Error("failed to save credentials", err.Error())
+		h.Logger.With("err", err.Error()).Error("failed to save credentials")
 		http.Error(w, fmt.Sprintf("failed to save credentials: %v", err), http.StatusInternalServerError)
 		return
 	}

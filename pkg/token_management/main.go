@@ -35,7 +35,7 @@ func (v *ValidTokenProvider) GetOperatorId() (int, error) {
 func (v *ValidTokenProvider) GetToken() (string, error) {
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
-		v.Logger.Warn("load credentials %s", err.Error())
+		v.Logger.With("err", err.Error()).Warn("load credentials")
 		return "", fmt.Errorf("load credentials: %w", err)
 	}
 
