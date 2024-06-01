@@ -16,8 +16,7 @@ const (
 type SmsCodeGetter func() (string, error)
 
 type PhoneNumberAuthenticator struct {
-	phoneNumber  string
-	userAccounts []models.Account
+	phoneNumber string
 }
 
 func NewPhoneNumberAuthenticator(phoneNumber string) *PhoneNumberAuthenticator {
@@ -53,21 +52,6 @@ func (a *PhoneNumberAuthenticator) isPhoneNumberValid() bool {
 	}
 
 	return r.MatchString(a.phoneNumber)
-}
-
-func (a *PhoneNumberAuthenticator) getUserAccounts() ([]models.Account, error) {
-	authUrl := fmt.Sprintf("%s/auth/v2/login/%s", constants.BaseUrl, a.phoneNumber)
-
-	var accounts []models.Account
-	err := helpers.NewUpstreamRequest(authUrl).Send(http.MethodGet, &accounts)
-	if err != nil {
-		return []models.Account{}, fmt.Errorf("failed to check account: %w", err)
-	}
-	if len(accounts) == 0 {
-		return []models.Account{}, fmt.Errorf("empty response for accounts found for phone number %s", a.phoneNumber)
-	}
-
-	return accounts, nil
 }
 
 func (a *PhoneNumberAuthenticator) requestConfirmationCode(account models.Account) error {

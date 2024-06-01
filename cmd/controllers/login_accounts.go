@@ -34,15 +34,14 @@ func (h *Handler) SelectAccountHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var loginError = ""
 	authenticator := auth.NewPhoneNumberAuthenticator(phoneNumber)
 	requestErr := authenticator.RequestSmsCode(selectedAccount)
 	if requestErr != nil {
 		http.Error(w, fmt.Sprintf("Failed to request confirmation code: %v", err), http.StatusInternalServerError)
-		loginError = requestErr.Error()
 		return
 	}
 
+	loginError := ""
 	data := models.SMSPageData{
 		Phone:      phoneNumber,
 		BaseUrl:    h.determineBaseUrl(r),

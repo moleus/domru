@@ -22,18 +22,16 @@ func (h *Handler) LoginPhoneInputHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var loginError = ""
 	phone := r.FormValue("phone")
 	accounts, err := h.domruApi.RequestAccounts(phone)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get user accounts: %v", err), http.StatusInternalServerError)
-		loginError = err.Error()
 		return
 	}
 
 	data := models.AccountsPageData{Accounts: accounts, Phone: phone}
 	data.BaseUrl = h.determineBaseUrl(r)
-	data.LoginError = loginError
+	data.LoginError = ""
 
 	err = h.renderTemplate(w, "accounts", data)
 	if err != nil {

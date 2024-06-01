@@ -104,7 +104,7 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
-			logger.Debug("Proxying request to %s", r.URL)
+			logger.With("url", r.URL.String()).Debug("proxying request")
 			proxyHandler(w, r)
 		} else {
 			logger.Debug("Redirecting to /pages/home.html")

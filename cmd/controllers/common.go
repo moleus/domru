@@ -73,7 +73,7 @@ func (h *Handler) determineBaseUrl(r *http.Request) string {
 	}
 	ingressPath := r.Header.Get("X-Ingress-Path")
 	if ingressPath == "" && haHost != "" {
-		h.Logger.Warn("X-Ingress-Path header is empty, when using Home Assistant host %s", haHost)
+		h.Logger.With("ha_host", haHost).Warn("X-Ingress-Path header is empty, when using Home Assistant host")
 	}
 
 	return fmt.Sprintf("%s://%s%s", scheme, host, ingressPath)
