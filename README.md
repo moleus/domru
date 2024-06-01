@@ -17,14 +17,16 @@ This is a simple reverse proxy which adds authentication token to requests to do
 Also provides a simple web interface to view camera snapshots and open doors
 
 ## Run in Docker
+Find available docker images here: https://github.com/moleus/domru/pkgs/container/domru
+Please, don't use `latest` tag, because new update can break your setup
 
 ```shell
-cp example.accounts.json accounts.json
-docker run --name moleus/domru:latest --rm -p 8080:8080 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:latest
+docker run --name moleus/domru:%docker-tag% --rm -p 8080:8080 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:latest
 ```
 
 ## Authentication
-open http://localhost:8080/login
+
+open http://localhost:8080/
 
 1. You can use your phone number and confirmation code from sms to login
 2. You can use login and password
@@ -36,7 +38,7 @@ This application provides the following endpoints
 | Endpoint               | Method   | Description       |
 |------------------------|----------|-------------------|
 | `/`, `pages/home.html` | GET      | Home Page         |
-| `/login`    | GET      | Login Page        |   
+| `/login`               | GET      | Login Page        |   
 | `/stream/{cameraId}`   | GET      | View video stream |
 | `/login`               | GET/POST | Login             |
 
