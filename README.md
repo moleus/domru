@@ -10,6 +10,11 @@
 
 **moleus/domru** is a fork of [ad/domru](https://github.com/ad/domru).
 
+## Breaking changes
+This version **is not compatible** with ad/domru, the last compatible version is [0.1.6-dev.0](https://github.com/users/moleus/packages/container/domru/218322867?tag=0.1.6-dev.0)
+
+New code structure and API is instroduced in PR [#13](https://github.com/moleus/domru/pull/13)
+
 ## Overview
 
 This is a simple reverse proxy which adds authentication token to requests to domru API.
