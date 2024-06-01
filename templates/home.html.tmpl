@@ -91,7 +91,7 @@
                 <div class="table-body-cell">Адрес:</div>
                 <div class="table-body-cell">
                     {{ $ac.Name }}
-                    <button onclick="fetch('{{ $openDoorUrl }}', {method: 'POST'}); return false;">
+                    <button onclick="openDoor({{ $openDoorUrl }})">
                         Открыть
                     </button>
                 </div>
@@ -133,5 +133,10 @@ camera:
     </div>
     {{ end }}
 </main>
+<script>
+function openDoor(url) {
+    fetch(url, {method: 'POST', headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: 'accessControlOpen'})});
+}
+</script>
 </body>
 </html>
