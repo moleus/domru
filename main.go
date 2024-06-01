@@ -128,7 +128,7 @@ func overrideCredentialsWithFlags(credentialsStore *auth.FileCredentialsStore, l
 		}
 		err := credentialsStore.SaveCredentials(credentials)
 		if err != nil {
-			logger.Error("Unable to save credentials: %v", err)
+			logger.With("err", err.Error()).Error("Unable to save credentials")
 		}
 	}
 }
