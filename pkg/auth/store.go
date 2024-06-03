@@ -2,10 +2,12 @@ package auth
 
 import (
 	"encoding/json"
-	"github.com/ad/domru/pkg/domru/models"
-	"github.com/ad/domru/pkg/domru/sanitizing_utils"
 	"log/slog"
 	"os"
+	"path"
+
+	"github.com/ad/domru/pkg/domru/models"
+	"github.com/ad/domru/pkg/domru/sanitizing_utils"
 )
 
 type Credentials struct {
@@ -44,7 +46,15 @@ func NewFileCredentialsStore(filePath string) *FileCredentialsStore {
 }
 
 func (f *FileCredentialsStore) SaveCredentials(credentials Credentials) error {
-	file, err := os.OpenFile(f.filePath, os.O_RDWR|os.O_CREATE, 0666)
+	directory := path.Dir(f.filePath)
+
+	if _, err := os.Stat(directory); os.IsNotExist(err) {
+		if err := os.MkdirAll(directory, 0o700); err != nil {
+			return err
+		}
+	}
+
+	file, err := os.OpenFile(f.filePath, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		return err
 	}
