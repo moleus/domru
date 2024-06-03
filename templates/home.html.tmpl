@@ -80,7 +80,7 @@
             {{ range $index, $ac := $placeEl.Place.AccessControls }}
             {{$snapshotUrl := getSnapshotUrl $.BaseUrl $placeEl.Place.ID $ac.ID }}
             {{$streamUrl := "Camera for this index not found ;("}}
-			{{ with (index $.Cameras.Data $index) }}
+            {{ with (index $.Cameras.Data $index) }}
                 {{$streamUrl = getCameraStreamUrl $.BaseUrl .ID }}
             {{ end }}
             {{$openDoorUrl := getOpenDoorUrl $.BaseUrl $placeEl.Place.ID $ac.ID }}
@@ -120,6 +120,10 @@ rest_command:
     domru_open_door:
         url: {{ $openDoorUrl }}
         method: post
+        headers:
+            accept: "application/json"
+        content_type:  'application/json; charset=utf-8'
+        payload: '{"name":"accessControlOpen"}'
 
 camera:
     - platform: generic
