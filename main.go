@@ -34,7 +34,7 @@ const (
 
 func initFlags() {
 	pflag.Int(flagPort, 18000, "listen port")
-	pflag.String(flagCredentialsFile, "accounts.json", "credentials file path (i.e: /usr/domofon/credentials.json")
+	pflag.String(flagCredentialsFile, "/share/domofon/accounts.json", "credentials file path (i.e: /usr/domofon/credentials.json")
 	pflag.String(flagLogLevel, "info", "log level")
 	pflag.String(flagRefreshToken, "", "refresh token")
 	pflag.Int(flagOperatorId, 0, "operator id")
