@@ -75,7 +75,7 @@
                 <div class="table-body-cell">Номер телефона:</div>
                 <div class="table-body-cell">+{{ .Phone }}</div>
             </div>
-            {{ else }}
+            {{ end }}
             {{ range $_, $placeEl := .Places.Data }}
             {{ range $index, $ac := $placeEl.Place.AccessControls }}
             {{$snapshotUrl := getSnapshotUrl $.BaseUrl $placeEl.Place.ID $ac.ID }}
