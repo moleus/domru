@@ -15,7 +15,7 @@ services:
     environment:
       - DOMRU_PORT=18000
     volumes:
-      - ./accounts.json:/share/domofon/account.json
+      - ./accounts.json:/share/domofon/accounts.json
 
 networks:
   domru-net:
