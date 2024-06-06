@@ -73,7 +73,7 @@ spec:
                 secretKeyRef:
                   name: domru-secrets
                   key: refresh
-            - name: DOMRU_OPERATOR
+            - name: DOMRU_OPERATOR_ID
               valueFrom:
                 secretKeyRef:
                   name: domru-secrets

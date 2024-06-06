@@ -121,6 +121,7 @@ func main() {
 
 func overrideCredentialsWithFlags(credentialsStore *auth.FileCredentialsStore, logger *slog.Logger) {
 	if viper.GetString(flagRefreshToken) != "" && viper.GetInt(flagOperatorId) != 0 {
+        logger.Info("Overriding credentials with flags")
 		credentials := auth.Credentials{
 			AccessToken:  "",
 			RefreshToken: viper.GetString(flagRefreshToken),
