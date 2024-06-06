@@ -3,22 +3,25 @@ package main
 import (
 	"embed"
 	"fmt"
+	"log"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+
 	"github.com/ad/domru/cmd/controllers"
 	"github.com/ad/domru/pkg/auth"
 	"github.com/ad/domru/pkg/authorizedhttp"
 	"github.com/ad/domru/pkg/domru"
 	"github.com/ad/domru/pkg/domru/constants"
+	"github.com/ad/domru/pkg/domru/sanitizing_utils"
 	"github.com/ad/domru/pkg/logging"
 	"github.com/ad/domru/pkg/reverse_proxy"
 	"github.com/ad/domru/pkg/token_management"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"log"
-	"log/slog"
-	"net/http"
-	"net/url"
-	"os"
 )
 
 //go:embed templates/*
@@ -45,6 +48,8 @@ func initFlags() {
 		log.Fatalf("Unable to bind flags: %v", err)
 	}
 
+	replacer := strings.NewReplacer("-", "_")
+	viper.SetEnvKeyReplacer(replacer)
 	viper.SetEnvPrefix("domru")
 	viper.AutomaticEnv()
 }
@@ -120,8 +125,10 @@ func main() {
 }
 
 func overrideCredentialsWithFlags(credentialsStore *auth.FileCredentialsStore, logger *slog.Logger) {
+	sanitizedToken := sanitizing_utils.KeepFirstNCharacters(viper.GetString(flagRefreshToken), 7)
+	logger.With("refreshToken", sanitizedToken).With("operator-id", viper.GetInt(flagOperatorId)).Debug("Checking flags")
 	if viper.GetString(flagRefreshToken) != "" && viper.GetInt(flagOperatorId) != 0 {
-        logger.Info("Overriding credentials with flags")
+		logger.Info("Overriding credentials with flags")
 		credentials := auth.Credentials{
 			AccessToken:  "",
 			RefreshToken: viper.GetString(flagRefreshToken),
