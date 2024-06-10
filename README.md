@@ -26,7 +26,7 @@ Find available docker images here: https://github.com/moleus/domru/pkgs/containe
 Please, don't use `latest` tag, because new update can break your setup
 
 ```shell
-docker run --name moleus/domru:%docker-tag% --rm -p 8080:8080 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:latest
+docker run --name domru --rm -p 8080:8080 -v $(pwd)/accounts.json:/share/domofon/accounts.json moleus/domru:%docker-tag%
 ```
 
 ## In Kubernetes

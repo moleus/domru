@@ -54,7 +54,7 @@ func (v *ValidTokenProvider) RefreshToken() error {
 	refreshUrl := fmt.Sprintf(constants.API_REFRESH_SESSION, constants.BaseUrl)
 	err = helpers.NewUpstreamRequest(refreshUrl,
 		helpers.WithHeader("Bearer", credentials.RefreshToken),
-        helpers.WithHeader("Operator", fmt.Sprint(credentials.OperatorID)),
+		helpers.WithHeader("Operator", fmt.Sprint(credentials.OperatorID)),
 	).Send(http.MethodGet, &refreshTokenResponse)
 	if err != nil {
 		return fmt.Errorf("send request to refresh token: %w", err)
