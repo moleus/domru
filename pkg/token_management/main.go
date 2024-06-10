@@ -2,12 +2,13 @@ package token_management
 
 import (
 	"fmt"
+	"log/slog"
+	"net/http"
+
 	"github.com/ad/domru/pkg/auth"
 	"github.com/ad/domru/pkg/domru/constants"
 	"github.com/ad/domru/pkg/domru/helpers"
 	"github.com/ad/domru/pkg/domru/models"
-	"log/slog"
-	"net/http"
 )
 
 type ValidTokenProvider struct {
@@ -53,6 +54,7 @@ func (v *ValidTokenProvider) RefreshToken() error {
 	refreshUrl := fmt.Sprintf(constants.API_REFRESH_SESSION, constants.BaseUrl)
 	err = helpers.NewUpstreamRequest(refreshUrl,
 		helpers.WithHeader("Bearer", credentials.RefreshToken),
+        helpers.WithHeader("Operator", fmt.Sprint(credentials.OperatorID)),
 	).Send(http.MethodGet, &refreshTokenResponse)
 	if err != nil {
 		return fmt.Errorf("send request to refresh token: %w", err)
