@@ -4,6 +4,7 @@ before:
 
 builds:
   - binary: domru
+    id: main-build
     goos:
       - linux
       - darwin
@@ -13,7 +14,10 @@ builds:
 
 kos:
   - repository: ghcr.io/moleus/domru
+    id: "github"
+    build: "main-build"
     main: .
+    base_image: "gcr.io/distroless/static-debian12"
     tags:
       - '{{.Version}}'
     bare: true
@@ -23,7 +27,10 @@ kos:
       - "linux/arm64"
       - "linux/arm/v7"
   - repository: moleus/domru
+    id: "dockerhub"
+    build: "main-build"
     main: .
+    base_image: "gcr.io/distroless/static-debian12"
     tags:
       - '{{.Version}}'
     bare: true
