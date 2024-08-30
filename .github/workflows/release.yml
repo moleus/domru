@@ -12,6 +12,10 @@ permissions:
   packages: write
   contents: write
 
+env:
+  KO_DEFAULTPLATFORMS: "linux/amd64,linux/arm64,linux/arm/v7"
+  KO_DEFAULTBASEIMAGE: "gcr.io/distroless/static-debian12"
+
 jobs:
   tag:
     name: Tag
