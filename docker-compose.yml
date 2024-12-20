@@ -1,11 +1,6 @@
-version: "3.7"
-
 services:
   domru:
-    build:
-      context: "."
-      dockerfile: Dockerfile
-    image: moleus/domru-dev:latest
+    image: ghcr.io/moleus/domru:0.2.7-dev.0
     container_name: domru
     restart: always
     networks:
@@ -13,9 +8,12 @@ services:
     ports:
       - ${DOMRU_HOST_PORT:-8080}:18000
     environment:
-      - DOMRU_PORT=18000
+      DOMRU_PORT: 18000
+      LOG_LEVEL: debug
     volumes:
-      - ./accounts.json:/share/domofon/accounts.json
+      - type: bind
+        source: ./accounts.json
+        target: /share/domofon/accounts.json
 
 networks:
   domru-net:
