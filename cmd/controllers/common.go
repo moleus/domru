@@ -10,6 +10,7 @@ import (
 	"github.com/moleus/domru/pkg/auth"
 	"github.com/moleus/domru/pkg/domru"
 	"github.com/moleus/domru/pkg/domru/constants"
+	"github.com/moleus/domru/pkg/domru/models"
 	"github.com/moleus/domru/pkg/homeassistant"
 )
 
@@ -17,6 +18,7 @@ type Handler struct {
 	Logger           *slog.Logger
 	domruAPI         *domru.APIWrapper
 	credentialsStore auth.CredentialsStore
+	accountInfo      *models.Account
 
 	TemplateFs embed.FS
 }

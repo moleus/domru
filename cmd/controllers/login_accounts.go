@@ -42,6 +42,8 @@ func (h *Handler) SelectAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.accountInfo = &selectedAccount
+
 	loginError := ""
 	data := models.SMSPageData{
 		Phone:      phoneNumber,

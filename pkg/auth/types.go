@@ -1,9 +1,10 @@
 package auth
 
 import (
+	"log/slog"
+
 	"github.com/moleus/domru/pkg/domru/models"
 	"github.com/moleus/domru/pkg/domru/sanitizing_utils"
-	"log/slog"
 )
 
 type Authentication interface {
