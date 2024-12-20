@@ -3,10 +3,11 @@ package controllers
 import (
 	"errors"
 	"fmt"
-	"github.com/ad/domru/cmd/models"
-	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/domru/helpers"
 	"net/http"
+
+	"github.com/moleus/domru/cmd/models"
+	"github.com/moleus/domru/pkg/auth"
+	"github.com/moleus/domru/pkg/domru/helpers"
 )
 
 func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Request) {
@@ -15,10 +16,10 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	accountId := r.FormValue("account_id")
+	accountID := r.FormValue("account_id")
 	password := r.FormValue("password")
 
-	authResponse, err := h.domruApi.LoginWithPassword(accountId, password)
+	authResponse, err := h.domruAPI.LoginWithPassword(accountID, password)
 	if err != nil {
 		h.Logger.With("err", err.Error()).Warn("failed to login with password")
 
@@ -32,7 +33,7 @@ func (h *Handler) LoginWithPasswordHandler(w http.ResponseWriter, r *http.Reques
 		}
 
 		data := models.LoginPageData{LoginError: errorMessage, Phone: ""}
-		data.BaseUrl = h.determineBaseUrl(r)
+		data.BaseURL = h.determineBaseURL(r)
 		if err = h.renderTemplate(w, "login", data); err != nil {
 			h.Logger.With("err", err.Error()).Error("failed to render login page")
 			http.Error(w, fmt.Sprintf("failed to render login page: %v", err), http.StatusInternalServerError)

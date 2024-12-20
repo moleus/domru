@@ -2,13 +2,14 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/ad/domru/cmd/models"
 	"net/http"
+
+	"github.com/moleus/domru/cmd/models"
 )
 
 func (h *Handler) LoginPageHandler(w http.ResponseWriter, r *http.Request) {
 	data := models.LoginPageData{Phone: "TODO: maybe store phone number"}
-	data.BaseUrl = h.determineBaseUrl(r)
+	data.BaseURL = h.determineBaseURL(r)
 
 	err := h.renderTemplate(w, "login", data)
 	if err != nil {
@@ -23,14 +24,14 @@ func (h *Handler) LoginPhoneInputHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	phone := r.FormValue("phone")
-	accounts, err := h.domruApi.RequestAccounts(phone)
+	accounts, err := h.domruAPI.RequestAccounts(phone)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get user accounts: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	data := models.AccountsPageData{Accounts: accounts, Phone: phone}
-	data.BaseUrl = h.determineBaseUrl(r)
+	data.BaseURL = h.determineBaseURL(r)
 	data.LoginError = ""
 
 	err = h.renderTemplate(w, "accounts", data)

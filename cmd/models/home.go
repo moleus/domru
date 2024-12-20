@@ -1,9 +1,9 @@
 package models
 
-import "github.com/ad/domru/pkg/domru/models"
+import "github.com/moleus/domru/pkg/domru/models"
 
 type HomePageData struct {
-	BaseUrl    string
+	BaseURL    string
 	LoginError string
 	Phone      string
 	Cameras    models.CamerasResponse

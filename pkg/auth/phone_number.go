@@ -2,9 +2,9 @@ package auth
 
 import (
 	"fmt"
-	"github.com/ad/domru/pkg/domru/constants"
-	"github.com/ad/domru/pkg/domru/helpers"
-	"github.com/ad/domru/pkg/domru/models"
+	"github.com/moleus/domru/pkg/domru/constants"
+	"github.com/moleus/domru/pkg/domru/helpers"
+	"github.com/moleus/domru/pkg/domru/models"
 	"net/http"
 	"regexp"
 )

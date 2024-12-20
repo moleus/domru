@@ -2,30 +2,30 @@ package domru
 
 import (
 	"fmt"
-	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/domru/constants"
-	"github.com/ad/domru/pkg/domru/helpers"
-	myhttp "github.com/ad/domru/pkg/domru/http"
-	"github.com/ad/domru/pkg/domru/models"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
+
+	"github.com/moleus/domru/pkg/auth"
+	"github.com/moleus/domru/pkg/domru/constants"
+	"github.com/moleus/domru/pkg/domru/helpers"
+	myhttp "github.com/moleus/domru/pkg/domru/http"
+	"github.com/moleus/domru/pkg/domru/models"
 )
 
 type APIWrapper struct {
 	Logger     *slog.Logger
-	baseUrl    string
+	baseURL    string
 	authClient myhttp.HTTPClient
 }
 
 func NewDomruAPI(authClient myhttp.HTTPClient) *APIWrapper {
-	return &APIWrapper{authClient: authClient, baseUrl: constants.BaseUrl, Logger: slog.Default()}
+	return &APIWrapper{authClient: authClient, baseURL: constants.BaseUrl, Logger: slog.Default()}
 }
 
-func (w *APIWrapper) LoginWithPassword(accountId, password string) (models.AuthenticationResponse, error) {
-
-	authenticator := auth.NewPasswordAuthenticator(accountId, password)
+func (w *APIWrapper) LoginWithPassword(accountID, password string) (models.AuthenticationResponse, error) {
+	authenticator := auth.NewPasswordAuthenticator(accountID, password)
 	authenticator.Logger = w.Logger
 
 	return authenticator.Authenticate()
@@ -46,8 +46,8 @@ func (w *APIWrapper) SubmitSmsCode(phoneNumber, code string) (models.Authenticat
 func (w *APIWrapper) RequestCameras() (models.CamerasResponse, error) {
 	var cameras models.CamerasResponse
 
-	camerasUrl := fmt.Sprintf("%s/rest/v1/forpost/cameras", w.baseUrl)
-	err := helpers.NewUpstreamRequest(camerasUrl, helpers.WithClient(w.authClient)).Send(http.MethodGet, &cameras)
+	camerasURL := fmt.Sprintf("%s/rest/v1/forpost/cameras", w.baseURL)
+	err := helpers.NewUpstreamRequest(camerasURL, helpers.WithClient(w.authClient)).Send(http.MethodGet, &cameras)
 	if err != nil {
 		return models.CamerasResponse{}, fmt.Errorf("request cameras: %w", err)
 	}
@@ -57,8 +57,8 @@ func (w *APIWrapper) RequestCameras() (models.CamerasResponse, error) {
 func (w *APIWrapper) RequestPlaces() (models.PlacesResponse, error) {
 	var places models.PlacesResponse
 
-	placesUrl := fmt.Sprintf("%s/rest/v1/subscriberplaces", w.baseUrl)
-	err := helpers.NewUpstreamRequest(placesUrl, helpers.WithClient(w.authClient)).Send(http.MethodGet, &places)
+	placesURL := fmt.Sprintf("%s/rest/v1/subscriberplaces", w.baseURL)
+	err := helpers.NewUpstreamRequest(placesURL, helpers.WithClient(w.authClient)).Send(http.MethodGet, &places)
 	if err != nil {
 		return models.PlacesResponse{}, fmt.Errorf("request places: %w", err)
 	}
@@ -68,8 +68,8 @@ func (w *APIWrapper) RequestPlaces() (models.PlacesResponse, error) {
 func (w *APIWrapper) RequestFinances() (models.FinancesResponse, error) {
 	var finances models.FinancesResponse
 
-	financesUrl := fmt.Sprintf("%s/rest/v1/subscribers/profiles/finances", w.baseUrl)
-	err := helpers.NewUpstreamRequest(financesUrl, helpers.WithClient(w.authClient)).Send(http.MethodGet, &finances)
+	financesURL := fmt.Sprintf("%s/rest/v1/subscribers/profiles/finances", w.baseURL)
+	err := helpers.NewUpstreamRequest(financesURL, helpers.WithClient(w.authClient)).Send(http.MethodGet, &finances)
 	if err != nil {
 		return models.FinancesResponse{}, fmt.Errorf("request finances: %w", err)
 	}
@@ -79,17 +79,17 @@ func (w *APIWrapper) RequestFinances() (models.FinancesResponse, error) {
 func (w *APIWrapper) RequestAccounts(phone string) ([]models.Account, error) {
 	var accounts []models.Account
 
-	loginUrl := fmt.Sprintf("%s/auth/v2/login/%s", w.baseUrl, phone)
-	err := helpers.NewUpstreamRequest(loginUrl).Send(http.MethodGet, &accounts)
+	loginURL := fmt.Sprintf("%s/auth/v2/login/%s", w.baseURL, phone)
+	err := helpers.NewUpstreamRequest(loginURL).Send(http.MethodGet, &accounts)
 	if err != nil {
 		return nil, fmt.Errorf("request accounts: %w", err)
 	}
 	return accounts, nil
 }
 
-func (w *APIWrapper) GetSnapshot(placeId, accessControl string) ([]byte, error) {
-	snapshotUrl := fmt.Sprintf("%s/rest/v1/places/%s/accesscontrols/%s/videosnapshots", w.baseUrl, placeId, accessControl)
-	resp, err := helpers.NewUpstreamRequest(snapshotUrl).SendRequest(http.MethodGet)
+func (w *APIWrapper) GetSnapshot(placeID, accessControl string) ([]byte, error) {
+	snapshotURL := fmt.Sprintf("%s/rest/v1/places/%s/accesscontrols/%s/videosnapshots", w.baseURL, placeID, accessControl)
+	resp, err := helpers.NewUpstreamRequest(snapshotURL).SendRequest(http.MethodGet)
 	if err != nil {
 		return nil, err
 	}
@@ -112,11 +112,11 @@ func (w *APIWrapper) GetSnapshot(placeId, accessControl string) ([]byte, error) 
 	return body, nil
 }
 
-func (w *APIWrapper) GetStreamUrl(cameraId string, queryParams url.Values) (string, error) {
+func (w *APIWrapper) GetStreamURL(cameraID string, queryParams url.Values) (string, error) {
 	var videoResponse models.VideoResponse
 
-	streamUrl := fmt.Sprintf("%s/rest/v1/forpost/cameras/%s/video", w.baseUrl, cameraId)
-	err := helpers.NewUpstreamRequest(streamUrl, helpers.WithClient(w.authClient), helpers.WithQueryParams(queryParams)).Send(http.MethodGet, &videoResponse)
+	streamURL := fmt.Sprintf("%s/rest/v1/forpost/cameras/%s/video", w.baseURL, cameraID)
+	err := helpers.NewUpstreamRequest(streamURL, helpers.WithClient(w.authClient), helpers.WithQueryParams(queryParams)).Send(http.MethodGet, &videoResponse)
 	if err != nil {
 		return "", fmt.Errorf("request stream streamUrl: %w", err)
 	}
@@ -130,8 +130,8 @@ func (w *APIWrapper) GetStreamUrl(cameraId string, queryParams url.Values) (stri
 func (w *APIWrapper) GetSubscriberProfile() (models.SubscriberProfilesResponse, error) {
 	var profile models.SubscriberProfilesResponse
 
-	profileUrl := fmt.Sprintf("%s/rest/v1/subscribers/profiles", w.baseUrl)
-	err := helpers.NewUpstreamRequest(profileUrl, helpers.WithClient(w.authClient)).Send(http.MethodGet, &profile)
+	profileURL := fmt.Sprintf("%s/rest/v1/subscribers/profiles", w.baseURL)
+	err := helpers.NewUpstreamRequest(profileURL, helpers.WithClient(w.authClient)).Send(http.MethodGet, &profile)
 	if err != nil {
 		return models.SubscriberProfilesResponse{}, fmt.Errorf("request subscriber profile: %w", err)
 	}

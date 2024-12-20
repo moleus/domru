@@ -1,10 +1,11 @@
 package authorizedhttp
 
 import (
-	myhttp "github.com/ad/domru/pkg/domru/http"
 	"log/slog"
 	"net/http"
 	"strconv"
+
+	myhttp "github.com/moleus/domru/pkg/domru/http"
 )
 
 type TokenRefreshError struct {
@@ -24,7 +25,7 @@ type TokenProvider interface {
 }
 
 type OperatorProvider interface {
-	GetOperatorId() (int, error)
+	GetOperatorID() (int, error)
 }
 
 type TokenRefresher interface {
@@ -39,7 +40,7 @@ type Client struct {
 
 	operatorProvider OperatorProvider
 
-	loginUrl string
+	loginURL string
 }
 
 func NewClient(tokenProvider TokenProvider, tokenRefresher TokenRefresher, operatorProvider OperatorProvider) *Client {
@@ -49,7 +50,7 @@ func NewClient(tokenProvider TokenProvider, tokenRefresher TokenRefresher, opera
 		operatorProvider: operatorProvider,
 		DefaultClient:    http.DefaultClient,
 		Logger:           slog.Default(),
-		loginUrl:         "/pages/login.html",
+		loginURL:         "/pages/login.html",
 	}
 }
 
@@ -82,14 +83,14 @@ func (c *Client) tryRequest(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	operatorId, err := c.operatorProvider.GetOperatorId()
+	operatorID, err := c.operatorProvider.GetOperatorID()
 	if err != nil {
 		c.Logger.With("error", err).Warn("Failed to get operator id")
 		return nil, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+newToken)
-	req.Header.Set("Operator", strconv.Itoa(operatorId))
+	req.Header.Set("Operator", strconv.Itoa(operatorID))
 	resp, err := c.DefaultClient.Do(req)
 	if err != nil {
 		c.Logger.With("error", err).With("url", req.URL).With("method", req.Method).With("headers", req.Header).Warn("Failed to send request")

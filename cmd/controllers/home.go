@@ -2,10 +2,11 @@ package controllers
 
 import (
 	errors2 "errors"
-	"github.com/ad/domru/cmd/models"
-	"github.com/ad/domru/pkg/authorizedhttp"
 	"net/http"
 	"strings"
+
+	"github.com/moleus/domru/cmd/models"
+	"github.com/moleus/domru/pkg/authorizedhttp"
 )
 
 func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +26,7 @@ func (h *Handler) prepareHomePageData(r *http.Request) (models.HomePageData, err
 	var errors []string
 	data := models.HomePageData{}
 
-	cameras, camerasErr := h.domruApi.RequestCameras()
+	cameras, camerasErr := h.domruAPI.RequestCameras()
 	if camerasErr != nil {
 		if errors2.As(camerasErr, &authorizedhttp.TokenRefreshError{}) {
 			return data, camerasErr
@@ -35,14 +36,14 @@ func (h *Handler) prepareHomePageData(r *http.Request) (models.HomePageData, err
 		data.Cameras = cameras
 	}
 
-	places, placesErr := h.domruApi.RequestPlaces()
+	places, placesErr := h.domruAPI.RequestPlaces()
 	if placesErr != nil {
 		errors = append(errors, placesErr.Error())
 	} else {
 		data.Places = places
 	}
 
-	subscriberProfiles, subscriberProfilesErr := h.domruApi.GetSubscriberProfile()
+	subscriberProfiles, subscriberProfilesErr := h.domruAPI.GetSubscriberProfile()
 	if subscriberProfilesErr != nil {
 		errors = append(errors, subscriberProfilesErr.Error())
 	} else {
@@ -53,7 +54,7 @@ func (h *Handler) prepareHomePageData(r *http.Request) (models.HomePageData, err
 
 	errorsMessage := strings.Join(errors, "\n")
 
-	data.BaseUrl = h.determineBaseUrl(r)
+	data.BaseURL = h.determineBaseURL(r)
 	data.LoginError = errorsMessage
 
 	return data, nil

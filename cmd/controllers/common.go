@@ -3,29 +3,30 @@ package controllers
 import (
 	"embed"
 	"fmt"
-	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/domru"
-	"github.com/ad/domru/pkg/domru/constants"
-	"github.com/ad/domru/pkg/home_assistant"
 	"html/template"
 	"log/slog"
 	"net/http"
+
+	"github.com/moleus/domru/pkg/auth"
+	"github.com/moleus/domru/pkg/domru"
+	"github.com/moleus/domru/pkg/domru/constants"
+	"github.com/moleus/domru/pkg/homeassistant"
 )
 
 type Handler struct {
 	Logger           *slog.Logger
-	domruApi         *domru.APIWrapper
+	domruAPI         *domru.APIWrapper
 	credentialsStore auth.CredentialsStore
 
 	TemplateFs embed.FS
 }
 
-func NewHandlers(templateFs embed.FS, credentialsStore auth.CredentialsStore, domruApi *domru.APIWrapper) (h *Handler) {
+func NewHandlers(templateFs embed.FS, credentialsStore auth.CredentialsStore, domruAPI *domru.APIWrapper) (h *Handler) {
 	h = &Handler{
 		TemplateFs:       templateFs,
 		Logger:           slog.Default(),
 		credentialsStore: credentialsStore,
-		domruApi:         domruApi,
+		domruAPI:         domruAPI,
 	}
 
 	return h
@@ -60,14 +61,14 @@ func getTemplateFunctions() template.FuncMap {
 		"getCameraStreamUrl": constants.GetCameraStreamUrl,
 	}
 }
-func (h *Handler) determineBaseUrl(r *http.Request) string {
+func (h *Handler) determineBaseURL(r *http.Request) string {
 	var scheme string
 	var host string
 
 	if scheme = r.URL.Scheme; scheme == "" {
 		scheme = "http"
 	}
-	haHost, haNetworkErr := home_assistant.GetHomeAssistantNetworkAddress()
+	haHost, haNetworkErr := homeassistant.GetHomeAssistantNetworkAddress()
 	if haNetworkErr != nil {
 		host = r.Host
 	}
@@ -75,6 +76,5 @@ func (h *Handler) determineBaseUrl(r *http.Request) string {
 	if ingressPath == "" && haHost != "" {
 		h.Logger.With("ha_host", haHost).Warn("X-Ingress-Path header is empty, when using Home Assistant host")
 	}
-
 	return fmt.Sprintf("%s://%s%s", scheme, host, ingressPath)
 }

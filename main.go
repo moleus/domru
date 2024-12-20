@@ -9,17 +9,18 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
-	"github.com/ad/domru/cmd/controllers"
-	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/authorizedhttp"
-	"github.com/ad/domru/pkg/domru"
-	"github.com/ad/domru/pkg/domru/constants"
-	"github.com/ad/domru/pkg/domru/sanitizing_utils"
-	"github.com/ad/domru/pkg/logging"
-	"github.com/ad/domru/pkg/reverse_proxy"
-	"github.com/ad/domru/pkg/token_management"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/moleus/domru/cmd/controllers"
+	"github.com/moleus/domru/pkg/auth"
+	"github.com/moleus/domru/pkg/authorizedhttp"
+	"github.com/moleus/domru/pkg/domru"
+	"github.com/moleus/domru/pkg/domru/constants"
+	"github.com/moleus/domru/pkg/domru/sanitizing_utils"
+	"github.com/moleus/domru/pkg/logging"
+	"github.com/moleus/domru/pkg/reverseproxy"
+	"github.com/moleus/domru/pkg/tokenmanagement"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -30,7 +31,7 @@ var templateFs embed.FS
 const (
 	flagPort            = "port"
 	flagRefreshToken    = "refresh-token"
-	flagOperatorId      = "operator-id"
+	flagOperatorID      = "operator-id"
 	flagCredentialsFile = "credentials"
 	flagLogLevel        = "log-level"
 )
@@ -40,7 +41,7 @@ func initFlags() {
 	pflag.String(flagCredentialsFile, "/share/domofon/accounts.json", "credentials file path (i.e: /usr/domofon/credentials.json")
 	pflag.String(flagLogLevel, "info", "log level")
 	pflag.String(flagRefreshToken, "", "refresh token")
-	pflag.Int(flagOperatorId, 0, "operator id")
+	pflag.Int(flagOperatorID, 0, "operator id")
 	pflag.Parse()
 
 	err := viper.BindPFlags(pflag.CommandLine)
@@ -75,7 +76,7 @@ func main() {
 
 	overrideCredentialsWithFlags(credentialsStore, logger)
 
-	authProvider := token_management.NewValidTokenProvider(credentialsStore)
+	authProvider := tokenmanagement.NewValidTokenProvider(credentialsStore)
 	authProvider.Logger = logger
 	authClient := authorizedhttp.NewClient(
 		authProvider,
@@ -95,7 +96,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	proxy := reverse_proxy.NewReverseProxy(upstream)
+	proxy := reverseproxy.NewReverseProxy(upstream)
 	proxy.Client = authClient
 	proxyHandler := proxy.ProxyRequestHandler()
 
@@ -118,7 +119,16 @@ func main() {
 	})
 
 	log.Printf("Listening on %s\n", listenAddr)
-	err = http.ListenAndServe(listenAddr, nil)
+
+	server := &http.Server{
+		Addr:         listenAddr,
+		Handler:      nil,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  50 * time.Second,
+	}
+
+	err = server.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -126,13 +136,13 @@ func main() {
 
 func overrideCredentialsWithFlags(credentialsStore *auth.FileCredentialsStore, logger *slog.Logger) {
 	sanitizedToken := sanitizing_utils.KeepFirstNCharacters(viper.GetString(flagRefreshToken), 7)
-	logger.With("refreshToken", sanitizedToken).With("operator-id", viper.GetInt(flagOperatorId)).Debug("Checking flags")
-	if viper.GetString(flagRefreshToken) != "" && viper.GetInt(flagOperatorId) != 0 {
+	logger.With("refreshToken", sanitizedToken).With("operator-id", viper.GetInt(flagOperatorID)).Debug("Checking flags")
+	if viper.GetString(flagRefreshToken) != "" && viper.GetInt(flagOperatorID) != 0 {
 		logger.Info("Overriding credentials with flags")
 		credentials := auth.Credentials{
 			AccessToken:  "",
 			RefreshToken: viper.GetString(flagRefreshToken),
-			OperatorID:   viper.GetInt(flagOperatorId),
+			OperatorID:   viper.GetInt(flagOperatorID),
 		}
 		err := credentialsStore.SaveCredentials(credentials)
 		if err != nil {

@@ -1,10 +1,11 @@
-package reverse_proxy
+package reverseproxy
 
 import (
-	myhttp "github.com/ad/domru/pkg/domru/http"
 	"io"
 	"net/http"
 	"net/url"
+
+	myhttp "github.com/moleus/domru/pkg/domru/http"
 )
 
 type ReverseProxy struct {

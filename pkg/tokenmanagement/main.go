@@ -1,14 +1,14 @@
-package token_management
+package tokenmanagement
 
 import (
 	"fmt"
 	"log/slog"
 	"net/http"
 
-	"github.com/ad/domru/pkg/auth"
-	"github.com/ad/domru/pkg/domru/constants"
-	"github.com/ad/domru/pkg/domru/helpers"
-	"github.com/ad/domru/pkg/domru/models"
+	"github.com/moleus/domru/pkg/auth"
+	"github.com/moleus/domru/pkg/domru/constants"
+	"github.com/moleus/domru/pkg/domru/helpers"
+	"github.com/moleus/domru/pkg/domru/models"
 )
 
 type ValidTokenProvider struct {
@@ -24,7 +24,7 @@ func NewValidTokenProvider(credentialsStore auth.CredentialsStore) *ValidTokenPr
 	return v
 }
 
-func (v *ValidTokenProvider) GetOperatorId() (int, error) {
+func (v *ValidTokenProvider) GetOperatorID() (int, error) {
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {
 		return 0, fmt.Errorf("load credentials: %w", err)
@@ -51,8 +51,8 @@ func (v *ValidTokenProvider) RefreshToken() error {
 	}
 
 	var refreshTokenResponse models.AuthenticationResponse
-	refreshUrl := fmt.Sprintf(constants.API_REFRESH_SESSION, constants.BaseUrl)
-	err = helpers.NewUpstreamRequest(refreshUrl,
+	refreshURL := fmt.Sprintf(constants.API_REFRESH_SESSION, constants.BaseUrl)
+	err = helpers.NewUpstreamRequest(refreshURL,
 		helpers.WithHeader("Bearer", credentials.RefreshToken),
 		helpers.WithHeader("Operator", fmt.Sprint(credentials.OperatorID)),
 	).Send(http.MethodGet, &refreshTokenResponse)

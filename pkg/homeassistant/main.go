@@ -1,16 +1,17 @@
-package home_assistant
+package homeassistant
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ad/domru/pkg/domru/constants"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/moleus/domru/pkg/domru/constants"
 )
 
 type HAConfig struct {

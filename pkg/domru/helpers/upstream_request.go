@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	myhttp "github.com/ad/domru/pkg/domru/http"
 	"io"
 	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
+
+	myhttp "github.com/moleus/domru/pkg/domru/http"
 )
 
 var defaultHeaders = map[string]string{
@@ -80,11 +81,11 @@ func WithLogger(logger *slog.Logger) func(*UpstreamRequest) {
 
 func WithQueryParams(params url.Values) func(*UpstreamRequest) {
 	return func(u *UpstreamRequest) {
-		parsedUrl, err := url.Parse(u.url)
+		parsedURL, err := url.Parse(u.url)
 		if err != nil {
 			log.Fatalf("failed to parse url %s: %v", u.url, err)
 		}
-		u.url = fmt.Sprintf("%s?%s", parsedUrl.String(), params.Encode())
+		u.url = fmt.Sprintf("%s?%s", parsedURL.String(), params.Encode())
 	}
 }
 
@@ -124,7 +125,7 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 }
 
 func (u *UpstreamRequest) SendRequest(method string) (*http.Response, error) {
-	var requestBody io.Reader = nil
+	var requestBody io.Reader
 	if u.body != nil {
 		jsonBody, err := json.Marshal(u.body)
 		if err != nil {
