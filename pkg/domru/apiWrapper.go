@@ -37,10 +37,10 @@ func (w *APIWrapper) LoginWithPhoneNumber(phoneNumber string, account models.Acc
 	return authenticator.RequestSmsCode(account)
 }
 
-func (w *APIWrapper) SubmitSmsCode(phoneNumber, code string) (models.AuthenticationResponse, error) {
+func (w *APIWrapper) SubmitSmsCode(phoneNumber, code string, account models.Account) (models.AuthenticationResponse, error) {
 	authenticator := auth.NewPhoneNumberAuthenticator(phoneNumber)
 
-	return authenticator.SubmitSmsCode(code)
+	return authenticator.SubmitSmsCode(code, account)
 }
 
 func (w *APIWrapper) RequestCameras() (models.CamerasResponse, error) {

@@ -19,6 +19,7 @@ type ConfirmationRequest struct {
 	Confirm2     string `json:"confirm2"`
 	Login        string `json:"login"`
 	OperatorID   int    `json:"operatorId"`
+	AccountID    string `json:"accountId"`
 	ProfileID    string `json:"profileId"`
 	SubscriberID string `json:"subscriberId"`
 }

@@ -17,6 +17,7 @@ type Handler struct {
 	Logger           *slog.Logger
 	domruAPI         *domru.APIWrapper
 	credentialsStore auth.CredentialsStore
+	accountInfo      *models.Account
 
 	TemplateFs embed.FS
 }
