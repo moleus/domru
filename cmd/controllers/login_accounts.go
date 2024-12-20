@@ -2,10 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/ad/domru/cmd/models"
-	"github.com/ad/domru/pkg/auth"
-	models2 "github.com/ad/domru/pkg/domru/models"
 	"net/http"
+
+	"github.com/moleus/domru/cmd/models"
+	"github.com/moleus/domru/pkg/auth"
+	models2 "github.com/moleus/domru/pkg/domru/models"
 )
 
 func (h *Handler) SelectAccountHandler(w http.ResponseWriter, r *http.Request) {
@@ -15,9 +16,9 @@ func (h *Handler) SelectAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	phoneNumber := r.FormValue("phone")
-	accountId := r.FormValue("accountId")
+	accountID := r.FormValue("accountId")
 
-	accounts, err := h.domruApi.RequestAccounts(phoneNumber)
+	accounts, err := h.domruAPI.RequestAccounts(phoneNumber)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get user accounts: %v", err), http.StatusInternalServerError)
 		return
@@ -28,7 +29,7 @@ func (h *Handler) SelectAccountHandler(w http.ResponseWriter, r *http.Request) {
 		if account.AccountID == nil {
 			continue
 		}
-		if *account.AccountID == accountId {
+		if *account.AccountID == accountID {
 			selectedAccount = account
 			break
 		}
@@ -44,7 +45,7 @@ func (h *Handler) SelectAccountHandler(w http.ResponseWriter, r *http.Request) {
 	loginError := ""
 	data := models.SMSPageData{
 		Phone:      phoneNumber,
-		BaseUrl:    h.determineBaseUrl(r),
+		BaseURL:    h.determineBaseURL(r),
 		LoginError: loginError,
 	}
 

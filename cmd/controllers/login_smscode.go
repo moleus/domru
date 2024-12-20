@@ -2,15 +2,16 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/ad/domru/pkg/auth"
 	"net/http"
+
+	"github.com/moleus/domru/pkg/auth"
 )
 
 func (h *Handler) SubmitSmsCodeHandler(w http.ResponseWriter, r *http.Request) {
 	phoneNumber := r.FormValue("phone")
 	smsCode := r.FormValue("smsCode")
 
-	authResponse, err := h.domruApi.SubmitSmsCode(phoneNumber, smsCode)
+	authResponse, err := h.domruAPI.SubmitSmsCode(phoneNumber, smsCode)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to authenticate: %v", err), http.StatusInternalServerError)
 		return

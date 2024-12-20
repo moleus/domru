@@ -6,12 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/ad/domru/pkg/antiblock_client"
-	"github.com/ad/domru/pkg/domru/helpers"
-	"github.com/ad/domru/pkg/domru/models"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/moleus/domru/pkg/antiblock_client"
+	"github.com/moleus/domru/pkg/domru/helpers"
+	"github.com/moleus/domru/pkg/domru/models"
 )
 
 const (
