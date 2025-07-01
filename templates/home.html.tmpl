@@ -78,12 +78,12 @@
             {{ end }}
             {{ range $_, $placeEl := .Places.Data }}
             {{ range $index, $ac := $placeEl.Place.AccessControls }}
-            {{$snapshotUrl := getSnapshotUrl $.BaseUrl $placeEl.Place.ID $ac.ID }}
+            {{$snapshotUrl := getSnapshotUrl $.BaseURL $placeEl.Place.ID $ac.ID }}
             {{$streamUrl := "Camera for this index not found ;("}}
             {{ with (index $.Cameras.Data $index) }}
-                {{$streamUrl = getCameraStreamUrl $.BaseUrl .ID }}
+                {{$streamUrl = getCameraStreamUrl $.BaseURL .ID }}
             {{ end }}
-            {{$openDoorUrl := getOpenDoorUrl $.BaseUrl $placeEl.Place.ID $ac.ID }}
+            {{$openDoorUrl := getOpenDoorUrl $.BaseURL $placeEl.Place.ID $ac.ID }}
 
             <div class="resp-table-row">
                 <div class="table-body-cell">Камера:</div>

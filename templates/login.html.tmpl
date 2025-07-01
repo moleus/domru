@@ -150,7 +150,7 @@ figure {
     <main id="wrapper">
         <figure>
             <h1>Вход</h1>
-            <form action="{{ .BaseUrl }}/login" method="post">
+            <form action="{{ .BaseURL }}/login" method="post">
                 <div class="group">
                     <input type="text" required name="phone" value="{{ .Phone }}" placeholder="79991112233">
                     <span class="bar"></span>
@@ -162,7 +162,7 @@ figure {
                     <button type="submit" class="btn">Войти по номеру телефона</button>
                 </div>
             </form>
-            <form action="{{ .BaseUrl }}/loginWithPassword" method="post">
+            <form action="{{ .BaseURL }}/loginWithPassword" method="post">
                 <div class="group">
                     <input type="text" required name="account_id" placeholder="Account ID">
                     <span class="bar"></span>
