@@ -1,4 +1,4 @@
-module github.com/moleus/domru
+module github.com/mrqmpan/domru
 
 go 1.22
 
