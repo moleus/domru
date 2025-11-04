@@ -3,7 +3,7 @@ package constants
 import "fmt"
 
 const (
-	BaseUrl            = "https://myhome.novotelecom.ru"
+	BaseUrl            = "https://myhome.proptech.ru"
 	USERAGENT_TEMPLATE = "Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200)"
 
 	API_HA_NETWORK = "http://supervisor/network/info"
