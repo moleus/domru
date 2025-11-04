@@ -13,7 +13,7 @@ builds:
       - arm64
 
 kos:
-  - repository: ghcr.io/moleus/domru
+  - repository: ghcr.io/mrqmpan/domru
     id: "github"
     build: "main-build"
     main: .
