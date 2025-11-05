@@ -6,9 +6,9 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/moleus/domru/pkg/domru/constants"
-	"github.com/moleus/domru/pkg/domru/helpers"
-	"github.com/moleus/domru/pkg/domru/models"
+	"github.com/mrqmpan/domru/pkg/domru/constants"
+	"github.com/mrqmpan/domru/pkg/domru/helpers"
+	"github.com/mrqmpan/domru/pkg/domru/models"
 )
 
 const (
