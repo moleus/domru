@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/moleus/domru/pkg/auth"
-	"github.com/moleus/domru/pkg/domru/constants"
-	"github.com/moleus/domru/pkg/domru/helpers"
-	"github.com/moleus/domru/pkg/domru/models"
+	"github.com/mrqmpan/domru/pkg/auth"
+	"github.com/mrqmpan/domru/pkg/domru/constants"
+	"github.com/mrqmpan/domru/pkg/domru/helpers"
+	"github.com/mrqmpan/domru/pkg/domru/models"
 )
 
 type ValidTokenProvider struct {
