@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/moleus/domru/pkg/auth"
-	"github.com/moleus/domru/pkg/domru/constants"
-	"github.com/moleus/domru/pkg/domru/helpers"
-	myhttp "github.com/moleus/domru/pkg/domru/http"
-	"github.com/moleus/domru/pkg/domru/models"
+	"github.com/mrqmpan/domru/pkg/auth"
+	"github.com/mrqmpan/domru/pkg/domru/constants"
+	"github.com/mrqmpan/domru/pkg/domru/helpers"
+	myhttp "github.com/mrqmpan/domru/pkg/domru/http"
+	"github.com/mrqmpan/domru/pkg/domru/models"
 )
 
 type APIWrapper struct {
