@@ -3,12 +3,10 @@ package constants
 import "fmt"
 
 const (
-	BaseUrl            = "https://myhome.novotelecom.ru"
+	BaseURL            = "https://myhome.proptech.ru"
 	USERAGENT_TEMPLATE = "Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200)"
 
 	API_HA_NETWORK = "http://supervisor/network/info"
-
-	API_AUTH = "https://api-auth.domru.ru/v1/person/auth"
 
 	API_AUTH_LOGIN            = "%s/auth/v2/login/%s"
 	API_AUTH_CONFIRMATION     = "%s/auth/v2/confirmation/%s"

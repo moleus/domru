@@ -21,7 +21,7 @@ type APIWrapper struct {
 }
 
 func NewDomruAPI(authClient myhttp.HTTPClient) *APIWrapper {
-	return &APIWrapper{authClient: authClient, baseURL: constants.BaseUrl, Logger: slog.Default()}
+	return &APIWrapper{authClient: authClient, baseURL: constants.BaseURL, Logger: slog.Default()}
 }
 
 func (w *APIWrapper) LoginWithPassword(accountID, password string) (models.AuthenticationResponse, error) {
@@ -79,7 +79,8 @@ func (w *APIWrapper) RequestFinances() (models.FinancesResponse, error) {
 func (w *APIWrapper) RequestAccounts(phone string) ([]models.Account, error) {
 	var accounts []models.Account
 
-	loginURL := fmt.Sprintf("%s/auth/v2/login/%s", w.baseURL, phone)
+	// Properly encode phone number for URL (+ becomes %2B)
+	loginURL := fmt.Sprintf("%s/auth/v2/login/%s", w.baseURL, url.PathEscape(phone))
 	err := helpers.NewUpstreamRequest(loginURL).Send(http.MethodGet, &accounts)
 	if err != nil {
 		return nil, fmt.Errorf("request accounts: %w", err)

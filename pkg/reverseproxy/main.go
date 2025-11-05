@@ -22,6 +22,7 @@ func (p *ReverseProxy) ProxyRequestHandler() func(http.ResponseWriter, *http.Req
 		// Step 1: rewrite URL
 		req.URL.Scheme = p.target.Scheme
 		req.URL.Host = p.target.Host
+		req.Host = p.target.Host // CRITICAL: Set Host header for upstream (fixes 403 errors)
 		req.RequestURI = ""
 
 		resp, err := p.Client.Do(req)
