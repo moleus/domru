@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	myhttp "github.com/moleus/domru/pkg/domru/http"
+	myhttp "github.com/mrqmpan/domru/pkg/domru/http"
 )
 
 type ReverseProxy struct {
