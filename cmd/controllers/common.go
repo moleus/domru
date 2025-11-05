@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/moleus/domru/pkg/auth"
-	"github.com/moleus/domru/pkg/domru"
-	"github.com/moleus/domru/pkg/domru/constants"
-	"github.com/moleus/domru/pkg/domru/models"
-	"github.com/moleus/domru/pkg/homeassistant"
+	"github.com/mrqmpan/domru/pkg/auth"
+	"github.com/mrqmpan/domru/pkg/domru"
+	"github.com/mrqmpan/domru/pkg/domru/constants"
+	"github.com/mrqmpan/domru/pkg/domru/models"
+	"github.com/mrqmpan/domru/pkg/homeassistant"
 )
 
 type Handler struct {
