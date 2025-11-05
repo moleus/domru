@@ -1,6 +1,6 @@
 package models
 
-import "github.com/moleus/domru/pkg/domru/models"
+import "github.com/mrqmpan/domru/pkg/domru/models"
 
 type HomePageData struct {
 	BaseURL    string
