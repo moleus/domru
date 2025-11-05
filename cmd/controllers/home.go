@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/moleus/domru/cmd/models"
-	"github.com/moleus/domru/pkg/authorizedhttp"
+	"github.com/mrqmpan/domru/cmd/models"
+	"github.com/mrqmpan/domru/pkg/authorizedhttp"
 )
 
 func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
