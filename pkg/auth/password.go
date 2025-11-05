@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/moleus/domru/pkg/antiblock_client"
-	"github.com/moleus/domru/pkg/domru/helpers"
-	"github.com/moleus/domru/pkg/domru/models"
+	"github.com/mrqmpan/domru/pkg/antiblock_client"
+	"github.com/mrqmpan/domru/pkg/domru/helpers"
+	"github.com/mrqmpan/domru/pkg/domru/models"
 )
 
 const (
