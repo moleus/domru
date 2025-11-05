@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/moleus/domru/cmd/models"
+	"github.com/mrqmpan/domru/cmd/models"
 )
 
 func (h *Handler) LoginPageHandler(w http.ResponseWriter, r *http.Request) {
