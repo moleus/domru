@@ -15,10 +15,11 @@ import (
 )
 
 var defaultHeaders = map[string]string{
-	"user-agent":      "Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200) |  | null | 10c99d90-9899-4a25-926f-067b34bc4a7f | null",
-	"content-type":    "application/json; charset=UTF-8",
-	"connection":      "Keep-Alive",
-	"accept-encoding": "gzip",
+	"user-agent":   "Google sdkgphone64x8664 | Android 14 | erth | 8.9.2 (8090200) |  | null | 10c99d90-9899-4a25-926f-067b34bc4a7f | null",
+	"content-type": "application/json; charset=UTF-8",
+	"connection":   "Keep-Alive",
+	// Note: Don't set "accept-encoding" manually. Go's http.Client automatically handles gzip
+	// compression/decompression when you let it manage the Accept-Encoding header.
 }
 
 type UpstreamError struct {

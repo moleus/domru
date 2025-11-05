@@ -59,7 +59,7 @@ func (a *PhoneNumberAuthenticator) isPhoneNumberValid() bool {
 
 func (a *PhoneNumberAuthenticator) requestConfirmationCode(account models.Account) error {
 	// Properly encode phone number for URL (+ becomes %2B)
-	confirmURL := fmt.Sprintf("%s/auth/v2/confirmation/%s", constants.BaseUrl, url.PathEscape(a.phoneNumber))
+	confirmURL := fmt.Sprintf("%s/auth/v2/confirmation/%s", constants.BaseURL, url.PathEscape(a.phoneNumber))
 	if account.AccountID == nil {
 		return fmt.Errorf("account id is nil. Account: %v", account)
 	}
@@ -77,7 +77,7 @@ func (a *PhoneNumberAuthenticator) requestConfirmationCode(account models.Accoun
 
 func (a *PhoneNumberAuthenticator) sendConfirmationCode(smsCode string, account models.Account) (models.AuthenticationResponse, error) {
 	// Properly encode phone number for URL (+ becomes %2B)
-	confirmURL := fmt.Sprintf("%s/auth/v3/auth/%s/confirmation", constants.BaseUrl, url.PathEscape(a.phoneNumber))
+	confirmURL := fmt.Sprintf("%s/auth/v3/auth/%s/confirmation", constants.BaseURL, url.PathEscape(a.phoneNumber))
 	if account.ProfileID == nil {
 		return models.AuthenticationResponse{}, fmt.Errorf("profile id is nil. Account: %v", account)
 	}

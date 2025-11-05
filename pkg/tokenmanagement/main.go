@@ -51,7 +51,7 @@ func (v *ValidTokenProvider) RefreshToken() error {
 	}
 
 	var refreshTokenResponse models.AuthenticationResponse
-	refreshURL := fmt.Sprintf(constants.API_REFRESH_SESSION, constants.BaseUrl)
+	refreshURL := fmt.Sprintf(constants.API_REFRESH_SESSION, constants.BaseURL)
 	err = helpers.NewUpstreamRequest(refreshURL,
 		helpers.WithHeader("Bearer", credentials.RefreshToken),
 		helpers.WithHeader("Operator", fmt.Sprint(credentials.OperatorID)),

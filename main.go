@@ -91,7 +91,7 @@ func main() {
 	handlers := controllers.NewHandlers(templateFs, credentialsStore, domruAPI)
 	handlers.Logger = logger
 
-	upstream, err := url.Parse(constants.BaseUrl)
+	upstream, err := url.Parse(constants.BaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}

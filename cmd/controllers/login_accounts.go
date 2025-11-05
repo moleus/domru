@@ -38,7 +38,7 @@ func (h *Handler) SelectAccountHandler(w http.ResponseWriter, r *http.Request) {
 	authenticator := auth.NewPhoneNumberAuthenticator(phoneNumber)
 	requestErr := authenticator.RequestSmsCode(selectedAccount)
 	if requestErr != nil {
-		http.Error(w, fmt.Sprintf("Failed to request confirmation code: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to request confirmation code: %v", requestErr), http.StatusInternalServerError)
 		return
 	}
 
