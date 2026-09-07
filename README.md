@@ -11,6 +11,16 @@ This is a simple reverse proxy which adds authentication token to requests to do
 
 Also provides a simple web interface to view camera snapshots and open doors
 
+The home page lists your own intercoms and, when the operator exposes
+`/rest/v1/places/{placeId}/screen-sections`, cameras of neighboring entrances.
+Neighboring cameras are viewable only with an active Pro subscription; otherwise
+their cards say so. Cameras are matched by camera/group IDs rather than list
+order, and the "Open door" button is shown only for your own access controls
+(taken from `/rest/v1/places/{placeId}/accesscontrols` with `allowOpen`). If the
+extra endpoints fail or return 404, the basic camera list is still rendered.
+Every card comes with its own Home Assistant snippet; merge them under a single
+`camera:` / `rest_command:` section.
+
 ## Run in Docker
 Find available docker images here: https://github.com/moleus/domru/pkgs/container/domru
 Please, don't use `latest` tag, because new update can break your setup
@@ -97,6 +107,8 @@ All other requests are forwarded to Domru API. A few of them:
 | Endpoint                                                                    | Method | Description        |
 |-----------------------------------------------------------------------------|--------|--------------------|
 | `/rest/v1/forpost/cameras`                                                  | GET    | Get cameras list   |
+| `/rest/v1/places/{placeId}/screen-sections`                                  | GET    | Additional camera sections and subscription access |
+| `/rest/v1/places/{placeId}/accesscontrols/{accessControlId}/snapshots`        | GET    | Camera snapshot, including authorized neighboring entrances |
 | `/rest/v1/places/{placeId}/accesscontrols/{accessControlId}/actions`        | POST   | Open door          |
 | `/rest/v1/subscribers/profiles/finances`                                    | GET    | Get finances       |
 | `/rest/v1/subscribers/profiles`                                             | GET    | Get profile info   |

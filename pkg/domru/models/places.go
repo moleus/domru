@@ -47,6 +47,10 @@ type AccessControl struct {
 	Entrances              []interface{} `json:"entrances"`
 }
 
+type AccessControlsResponse struct {
+	Data []AccessControl `json:"data"`
+}
+
 type Place struct {
 	ID                     int             `json:"id"`
 	Address                Address         `json:"address"`

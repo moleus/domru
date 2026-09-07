@@ -58,89 +58,89 @@
 
         pre {
             text-align: left;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
         }
+
+        .camera-card {
+            margin: 24px 0;
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+            text-align: left;
+        }
+
+        a { color: inherit; overflow-wrap: anywhere; }
+        img { max-width: 100%; height: auto; }
+        h1 { font-size: 1.4em; }
+        h2 { font-size: 1.1em; }
     </style>
 </head>
 <body>
 <main id="wrapper">
+    <h1>Камеры аккаунта</h1>
     {{ if .LoginError }}
-    <div class="alert alert-danger">
-        {{ .LoginError }}
-    </div>
-    {{ else }}
-    <div class="resp-table">
-        <div class="resp-table-body">
-            {{ if .Phone }}
-            <div class="resp-table-row">
-                <div class="table-body-cell">Номер телефона:</div>
-                <div class="table-body-cell">+{{ .Phone }}</div>
-            </div>
-            {{ end }}
-            {{ range $_, $placeEl := .Places.Data }}
-            {{ range $index, $ac := $placeEl.Place.AccessControls }}
-            {{$snapshotUrl := getSnapshotUrl $.BaseURL $placeEl.Place.ID $ac.ID }}
-            {{$streamUrl := "Camera for this index not found ;("}}
-            {{$cameraId := ""}}
-            {{ if lt $index (len $.Cameras.Data) }}
-                {{ with (index $.Cameras.Data $index) }}
-                    {{$streamUrl = getCameraStreamUrl $.BaseURL .ID }}
-                    {{$cameraId = printf "№ %d" .ID }}
+    <div class="alert alert-danger" role="alert">{{ .LoginError }}</div>
+    {{ end }}
+    {{ if .Phone }}<p>Номер телефона: +{{ .Phone }}</p>{{ end }}
+    {{ range .CameraCards }}
+    <section class="camera-card">
+        <h2>{{ .Section }} — {{ .Name }}</h2>
+        <div class="resp-table">
+            <div class="resp-table-body">
+                <div class="resp-table-row">
+                    <div class="table-body-cell">Камера:</div>
+                    <div class="table-body-cell">{{ if .ID }}№ {{ .ID }}{{ else }}Идентификатор пока недоступен{{ end }}</div>
+                </div>
+                <div class="resp-table-row">
+                    <div class="table-body-cell">Адрес / название:</div>
+                    <div class="table-body-cell">
+                        {{ .Name }}
+                        {{ if .OpenDoorURL }}<button onclick="openDoor({{ .OpenDoorURL }})">Открыть</button>{{ end }}
+                    </div>
+                </div>
+                <div class="resp-table-row">
+                    <div class="table-body-cell">Доступ:</div>
+                    <div class="table-body-cell">{{ .Status }}</div>
+                </div>
+                {{ if .StreamURL }}
+                <div class="resp-table-row">
+                    <div class="table-body-cell">Видеопоток:</div>
+                    <div class="table-body-cell"><a href="{{ .StreamURL }}">{{ .StreamURL }}</a></div>
+                </div>
                 {{ end }}
-            {{ end }}
-            {{$openDoorUrl := getOpenDoorUrl $.BaseURL $placeEl.Place.ID $ac.ID }}
-
-            <div class="resp-table-row">
-                <div class="table-body-cell">Камера:</div>
-                <div class="table-body-cell">{{ $cameraId }}</div>
-            </div>
-            <div class="resp-table-row">
-                <div class="table-body-cell">Адрес:</div>
-                <div class="table-body-cell">
-                    {{ $ac.Name }}
-                    <button onclick="openDoor({{ $openDoorUrl }})">
-                        Открыть
-                    </button>
+                {{ if .SnapshotURL }}
+                <div class="resp-table-row">
+                    <div class="table-body-cell">Снимок:</div>
+                    <div class="table-body-cell"><a href="{{ .SnapshotURL }}">{{ .SnapshotURL }}</a></div>
                 </div>
-            </div>
-            <div class="resp-table-row">
-                <div class="table-body-cell">Видеопоток:</div>
-                <div class="table-body-cell">
-                    {{ $streamUrl }}
+                <div class="resp-table-row">
+                    <div class="table-body-cell"></div>
+                    <div class="table-body-cell"><img src="{{ .SnapshotURL }}" alt="{{ .Name }}" width="320" loading="lazy"></div>
                 </div>
+                {{ end }}
             </div>
-            <div class="resp-table-row">
-                <div class="table-body-cell"></div>
-                <div class="table-body-cell">
-                    <img src="{{ $snapshotUrl }}"
-                         alt="Камера" width="320">
-                </div>
-            </div>
-            <div class="resp-table-row">
-                <div class="table-body-cell"></div>
-                <div class="table-body-cell">
-                        <pre>
-# Home Assistant configuration:
-rest_command:
-    domru_open_door:
-        url: {{ $openDoorUrl }}
+        </div>
+        {{ if or .StreamURL .SnapshotURL .OpenDoorURL }}
+        <pre># Home Assistant configuration:
+{{ if .OpenDoorURL }}rest_command:
+    {{ .ConfigName }}_open_door:
+        url: {{ .OpenDoorURL }}
         method: post
         headers:
             accept: "application/json"
-        content_type:  'application/json; charset=utf-8'
+        content_type: 'application/json; charset=utf-8'
         payload: '{"name":"accessControlOpen"}'
-
+{{ end }}{{ if or .StreamURL .SnapshotURL }}
 camera:
     - platform: generic
-        name: domofon
-        still_image_url: {{ $snapshotUrl }}
-        stream_source: {{ $streamUrl }}
-                        </pre>
-                </div>
-            </div>
-            {{ end }}
-            {{ end }}
-        </div>
-    </div>
+        name: {{ .ConfigName }}
+{{ if .SnapshotURL }}        still_image_url: {{ .SnapshotURL }}
+{{ end }}{{ if .StreamURL }}        stream_source: {{ .StreamURL }}
+{{ end }}{{ end }}</pre>
+        {{ end }}
+    </section>
+    {{ else }}
+    <p>Камеры не найдены.</p>
     {{ end }}
 </main>
 <script>
