@@ -9,7 +9,6 @@ import (
 
 	"github.com/moleus/domru/pkg/auth"
 	"github.com/moleus/domru/pkg/domru"
-	"github.com/moleus/domru/pkg/domru/constants"
 	"github.com/moleus/domru/pkg/domru/models"
 	"github.com/moleus/domru/pkg/homeassistant"
 )
@@ -57,11 +56,7 @@ func (h *Handler) renderTemplate(w http.ResponseWriter, templateName string, dat
 }
 
 func getTemplateFunctions() template.FuncMap {
-	return template.FuncMap{
-		"getSnapshotUrl":     constants.GetSnapshotUrl,
-		"getOpenDoorUrl":     constants.GetOpenDoorUrl,
-		"getCameraStreamUrl": constants.GetCameraStreamUrl,
-	}
+	return template.FuncMap{}
 }
 func (h *Handler) determineBaseURL(r *http.Request) string {
 	var scheme string
