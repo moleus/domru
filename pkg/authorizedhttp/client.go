@@ -1,9 +1,13 @@
 package authorizedhttp
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"sync"
 
 	myhttp "github.com/moleus/domru/pkg/domru/http"
 )
@@ -40,7 +44,8 @@ type Client struct {
 
 	operatorProvider OperatorProvider
 
-	loginURL string
+	loginURL  string
+	refreshMu sync.Mutex
 }
 
 func NewClient(tokenProvider TokenProvider, tokenRefresher TokenRefresher, operatorProvider OperatorProvider) *Client {
@@ -55,25 +60,43 @@ func NewClient(tokenProvider TokenProvider, tokenRefresher TokenRefresher, opera
 }
 
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	resp, err := c.tryRequest(req)
-	if err != nil {
-		c.Logger.With("error", err).With("url", req.URL).With("method", req.Method).With("headers", req.Header).Warn("Failed to send request")
-		return nil, err
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		// Refresh the token
-		c.Logger.Debug("Token expired. Refreshing token...")
-		err = c.tokenRefresher.RefreshToken()
+	// Incoming proxy requests have no GetBody. Buffer only bounded request
+	// bodies so a confirmed 401 can be retried with the original POST payload.
+	r := req.Clone(req.Context())
+	if r.Body != nil && r.Body != http.NoBody && r.GetBody == nil {
+		data, err := io.ReadAll(io.LimitReader(r.Body, (1<<20)+1))
+		r.Body.Close()
 		if err != nil {
-			c.Logger.With("err", err).Warn("Failed to refresh token. Redirecting to login page")
-			return nil, NewTokenRefreshError(err)
+			return nil, err
 		}
-
-		return c.tryRequest(req)
+		if len(data) > 1<<20 {
+			return nil, fmt.Errorf("request body exceeds 1 MiB")
+		}
+		r.Body = io.NopCloser(bytes.NewReader(data))
+		r.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil }
 	}
-
-	return resp, err
+	resp, err := c.tryRequest(r)
+	if err != nil || resp.StatusCode != http.StatusUnauthorized {
+		return resp, err
+	}
+	resp.Body.Close()
+	used := r.Header.Get("Authorization")
+	c.refreshMu.Lock()
+	current, tokenErr := c.tokenProvider.GetToken()
+	if tokenErr == nil && used == "Bearer "+current {
+		tokenErr = c.tokenRefresher.RefreshToken()
+	}
+	c.refreshMu.Unlock()
+	if tokenErr != nil {
+		return nil, NewTokenRefreshError(tokenErr)
+	}
+	if r.GetBody != nil {
+		r.Body, err = r.GetBody()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.tryRequest(r)
 }
 
 func (c *Client) tryRequest(req *http.Request) (*http.Response, error) {
@@ -93,7 +116,7 @@ func (c *Client) tryRequest(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Operator", strconv.Itoa(operatorID))
 	resp, err := c.DefaultClient.Do(req)
 	if err != nil {
-		c.Logger.With("error", err).With("url", req.URL).With("method", req.Method).With("headers", req.Header).Warn("Failed to send request")
+		c.Logger.Warn("Authorized HTTP request failed")
 		return nil, err
 	}
 	return resp, nil

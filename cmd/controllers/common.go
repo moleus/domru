@@ -18,6 +18,9 @@ type Handler struct {
 	domruAPI         *domru.APIWrapper
 	credentialsStore auth.CredentialsStore
 	accountInfo      *models.Account
+	// EndCallDoor is the {place, access control} whose "Открыть" button and HA
+	// snippet go through /api/.../open-and-end-call (SIP intercom). Zero = none.
+	EndCallDoor [2]int
 
 	TemplateFs embed.FS
 }

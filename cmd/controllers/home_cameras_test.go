@@ -34,11 +34,16 @@ func TestCameraCardsMatchAcrossPlacesAndKeepStandaloneCameras(t *testing.T) {
 		{ID: 303, Name: "Standalone", IsActive: 1},
 		{ID: 201, IsActive: 1, ParentGroups: []domrumodels.ParentGroup{{ID: 101}}},
 	}}
-	cards := buildCameraCards(cameraTestBase, places, cameras, nil)
+	cards := buildCameraCards(cameraTestBase, places, cameras, nil, [2]int{})
 	require.Len(t, cards, 4)
 	require.Equal(t, 201, cards[0].ID)
 	require.Equal(t, cameraTestBase+"/stream/201", cards[0].StreamURL)
 	require.Equal(t, cameraTestBase+"/rest/v1/places/10/accesscontrols/11/actions", cards[0].OpenDoorURL)
+	// The SIP intercom's button goes through open-and-end-call; other doors keep the legacy action.
+	sip := buildCameraCards(cameraTestBase, places, cameras, nil, [2]int{10, 11})
+	require.Equal(t, cameraTestBase+"/api/places/10/accesscontrols/11/open-and-end-call", sip[0].OpenDoorURL)
+	other := buildCameraCards(cameraTestBase, places, cameras, nil, [2]int{10, 12})
+	require.Equal(t, cards[0].OpenDoorURL, other[0].OpenDoorURL)
 	require.Zero(t, cards[1].ID, "an unmatched door must not borrow a camera by array position")
 	require.Empty(t, cards[1].StreamURL)
 	require.Equal(t, 202, cards[2].ID)
@@ -73,7 +78,7 @@ func TestNeighborCameraEntitlements(t *testing.T) {
 					{AccessControlID: 31, Name: "Neighbor", ServiceActivated: tc.activated, AllowVideo: tc.video, PreviewAvailable: tc.preview, ExternalCameraID: tc.id},
 				}},
 			}}}
-			cards := buildCameraCards(cameraTestBase, places, domrumodels.CamerasResponse{}, sections)
+			cards := buildCameraCards(cameraTestBase, places, domrumodels.CamerasResponse{}, sections, [2]int{})
 			require.Len(t, cards, 1)
 			require.Equal(t, tc.wantStream, cards[0].StreamURL != "")
 			require.Equal(t, tc.wantSnapshot, cards[0].SnapshotURL != "")
@@ -104,7 +109,7 @@ func TestCameraCardsDeduplicateSourcesAndIgnoreOtherSections(t *testing.T) {
 		}},
 	}}}
 	cards := buildCameraCards(cameraTestBase, domrumodels.PlacesResponse{Data: []domrumodels.Data{place, place}},
-		domrumodels.CamerasResponse{Data: []domrumodels.Camera{{ID: 201}, {ID: 301}}}, sections)
+		domrumodels.CamerasResponse{Data: []domrumodels.Camera{{ID: 201}, {ID: 301}}}, sections, [2]int{})
 	require.Len(t, cards, 2)
 	require.Equal(t, 201, cards[0].ID)
 	require.Equal(t, 301, cards[1].ID)

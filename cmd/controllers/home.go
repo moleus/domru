@@ -90,7 +90,7 @@ func (h *Handler) prepareHomePageData(r *http.Request) (models.HomePageData, err
 			errors = append(errors, fmt.Sprintf("Не удалось загрузить дополнительные камеры адреса %d: %v", placeID, err))
 		}
 	}
-	data.CameraCards = buildCameraCards(data.BaseURL, data.Places, data.Cameras, sections)
+	data.CameraCards = buildCameraCards(data.BaseURL, data.Places, data.Cameras, sections, h.EndCallDoor)
 	data.LoginError = strings.Join(errors, "\n")
 
 	return data, nil

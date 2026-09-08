@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
-	"path"
+	"sync"
+
+	"github.com/moleus/domru/pkg/atomicfile"
 
 	"github.com/moleus/domru/pkg/domru/models"
 	"github.com/moleus/domru/pkg/domru/sanitizing_utils"
@@ -39,6 +41,7 @@ type CredentialsStore interface {
 
 type FileCredentialsStore struct {
 	filePath string
+	mu       sync.RWMutex
 }
 
 func NewFileCredentialsStore(filePath string) *FileCredentialsStore {
@@ -46,25 +49,14 @@ func NewFileCredentialsStore(filePath string) *FileCredentialsStore {
 }
 
 func (f *FileCredentialsStore) SaveCredentials(credentials Credentials) error {
-	directory := path.Dir(f.filePath)
-
-	if _, err := os.Stat(directory); os.IsNotExist(err) {
-		if err := os.MkdirAll(directory, 0o700); err != nil {
-			return err
-		}
-	}
-
-	file, err := os.OpenFile(f.filePath, os.O_RDWR|os.O_CREATE, 0o666)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	return encoder.Encode(credentials)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return atomicfile.WriteJSON(f.filePath, credentials)
 }
 
 func (f *FileCredentialsStore) LoadCredentials() (Credentials, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	file, err := os.Open(f.filePath)
 	if err != nil {
 		return Credentials{}, err

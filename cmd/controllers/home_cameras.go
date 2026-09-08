@@ -49,7 +49,7 @@ func setCameraMedia(card *models.CameraCard, baseURL, snapshotURL string, allowV
 	}
 }
 
-func buildCameraCards(baseURL string, places domrumodels.PlacesResponse, cameras domrumodels.CamerasResponse, sections map[int]domrumodels.ScreenSectionsResponse) []models.CameraCard {
+func buildCameraCards(baseURL string, places domrumodels.PlacesResponse, cameras domrumodels.CamerasResponse, sections map[int]domrumodels.ScreenSectionsResponse, endCall [2]int) []models.CameraCard {
 	var cards []models.CameraCard
 	seenCameras := make(map[int]bool)
 	seenControls := make(map[[2]int]bool)
@@ -81,6 +81,11 @@ func buildCameraCards(baseURL string, places domrumodels.PlacesResponse, cameras
 				ac.AllowVideo, ac.AllowSlideshow || ac.PreviewAvailable)
 			if ac.AllowOpen {
 				card.OpenDoorURL = constants.GetOpenDoorUrl(baseURL, place.ID, ac.ID)
+				// The endpoint ignores the request body, so the page script and HA
+				// snippet keep sending the legacy accessControlOpen payload unchanged.
+				if key == endCall {
+					card.OpenDoorURL = fmt.Sprintf("%s/api/places/%d/accesscontrols/%d/open-and-end-call", baseURL, place.ID, ac.ID)
+				}
 			}
 			cards = append(cards, card)
 			seenCameras[id] = true

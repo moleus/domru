@@ -1,0 +1,42 @@
+# Experimental variant: SIP call notifications, webhook and Telegram button.
+# Host networking lets the operator's SIP server reach our UDP port and RTP
+# range directly, so there is no `ports:` mapping; the web UI is kept on 8080
+# by setting DOMRU_PORT. Run exactly one instance of this service: a second
+# SIP registration or a second Telegram poller for the same bot breaks both.
+#
+# Required: DOMRU_SIP_IP (LAN IPv4 of the host), DOMRU_SIP_PLACE_ID and
+# DOMRU_SIP_ACCESS_CONTROL_ID (take both from the home page / accesscontrols API).
+# Put secrets into a `.env` file next to this compose file, not into the repo.
+services:
+  domru:
+    build: .
+    image: domru:local
+    container_name: domru
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      DOMRU_PORT: "8080"
+      DOMRU_LOG_LEVEL: "info"
+      DOMRU_CREDENTIALS: "/data/accounts.json"
+
+      DOMRU_SIP_ENABLED: "true"
+      DOMRU_SIP_IP: "${DOMRU_SIP_IP:?set the host LAN IPv4}"
+      DOMRU_SIP_PORT: "${DOMRU_SIP_PORT:-5060}"
+      DOMRU_SIP_RTP_FIRST: "20000"
+      DOMRU_SIP_RTP_LAST: "20100"
+      DOMRU_SIP_PLACE_ID: "${DOMRU_SIP_PLACE_ID:?set the place id}"
+      DOMRU_SIP_ACCESS_CONTROL_ID: "${DOMRU_SIP_ACCESS_CONTROL_ID:?set the access control id}"
+      # off | reject | answer-bye. Only `answer-bye` was verified to silence the
+      # panel; `reject` (486) ends just our leg. Default stays `off` for unknown setups.
+      DOMRU_SIP_END_MODE: "${DOMRU_SIP_END_MODE:-off}"
+      # Diagnostics expose POST /api/sip/calls/{id}/{reject|answer-bye}
+      # behind a bearer token (24+ chars). Disable after the experiment.
+      DOMRU_SIP_DIAGNOSTICS: "${DOMRU_SIP_DIAGNOSTICS:-false}"
+      DOMRU_SIP_DIAGNOSTICS_TOKEN: "${DOMRU_SIP_DIAGNOSTICS_TOKEN:-}"
+
+      DOMRU_WEBHOOK_URL: "${DOMRU_WEBHOOK_URL:-}"
+      DOMRU_TELEGRAM_BOT_TOKEN: "${DOMRU_TELEGRAM_BOT_TOKEN:-}"
+      DOMRU_TELEGRAM_CHAT_ID: "${DOMRU_TELEGRAM_CHAT_ID:-}"
+    volumes:
+      # accounts.json, sip-installation-id and telegram-state.json live here.
+      - ./data:/data
