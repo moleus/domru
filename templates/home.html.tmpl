@@ -78,6 +78,7 @@
 <body>
 <main id="wrapper">
     <h1>Камеры аккаунта</h1>
+    <p id="integrations" hidden></p>
     {{ if .LoginError }}
     <div class="alert alert-danger" role="alert">{{ .LoginError }}</div>
     {{ end }}
@@ -144,6 +145,22 @@ camera:
     {{ end }}
 </main>
 <script>
+// ponytail: one line of status from /api/integrations/state, hidden when SIP and Telegram are both off.
+function showIntegrations() {
+    fetch('/api/integrations/state', {cache: 'no-store'}).then(r => r.json()).then(s => {
+        const p = document.getElementById('integrations');
+        if (s.sip.state === 'off' && s.telegram.state === 'off') { p.hidden = true; return; }
+        const part = (name, x) => name + ': ' + x.state + (x.error ? ' (' + x.error + ')' : '');
+        const calls = (s.sip.calls || []).filter(c => ['ringing', 'answering', 'established'].includes(c.state));
+        let text = part('SIP', s.sip) + ' · ' + part('Telegram', s.telegram) + ' · Завершение звонка: ' + s.end_mode;
+        if (calls.length) text += ' · Звонок: ' + calls.map(c => c.state).join(', ');
+        if (s.webhook_error) text += ' · Webhook: ' + s.webhook_error;
+        p.textContent = text;
+        p.hidden = false;
+    }).catch(() => {});
+}
+showIntegrations();
+setInterval(showIntegrations, 10000);
 function openDoor(url) {
     fetch(url, {method: 'POST', headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: 'accessControlOpen'})});
 }
