@@ -138,7 +138,7 @@ test plan live in `decisions/003-sip-webhook-integration.md` (local file).
 | `DOMRU_SIP_DIAGNOSTICS`, `DOMRU_SIP_DIAGNOSTICS_TOKEN` | Enable per-call actions below; token of 24+ characters |
 | `DOMRU_WEBHOOK_URL` | POST `{"event":"Ringing"}` with an `Idempotency-Key` per call |
 | `DOMRU_TELEGRAM_BOT_TOKEN`, `DOMRU_TELEGRAM_CHAT_ID` | Dedicated bot and numeric id of one private chat or group |
-| `DOMRU_TELEGRAM_VIDEO` | `true` follows every photo with a 30 s MP4 (15 s before and after the call) cut from the operator's cloud archive; needs recording on the tariff |
+| `DOMRU_TELEGRAM_VIDEO` | `true` follows every photo with a 30 s MP4 (15 s before and after the call) cut from the operator's cloud archive, falling back to an in-memory live buffer when the tariff has no recording; `buffer` uses the live buffer only |
 
 State files next to `accounts.json`: `sip-installation-id` (stable SIP device id)
 and `telegram-state.json` (button bindings, update offset, callback results;
@@ -168,12 +168,19 @@ button. The button never expires and may be pressed again later; it always
 refers to the call it was sent for and never ends a newer call.
 
 With `DOMRU_TELEGRAM_VIDEO=true` the bot also replies to the photo with a short
-clip about 15–20 s after the call. The clip is not recorded locally: the
-operator keeps a continuous cloud recording per camera and plays it back from
-any moment (`/video?TS=<unix seconds>`), so the seconds before the call are
-already there. The FLV playback is remuxed to MP4 in memory
-(`github.com/yapingcat/gomedia`, pure Go). A missing recording only shows up
-in `/api/integrations/state`; the photo and the button are unaffected.
+clip about 15–20 s after the call. Nothing is written to disk: the operator
+keeps a continuous cloud recording per camera and plays it back from any
+moment (`/video?TS=<unix seconds>`), so the seconds before the call are
+already there. Tariffs without recording answer such a request with the live
+stream instead; the bot detects that (once at startup and on every call) and
+switches for good to a **live buffer**: a permanent connection to the camera's
+light stream (960×528) keeps the last 20 s of frames in RAM (~1 MiB, no
+decoding) and the clip is cut from it, including the seconds before the ring.
+The call that triggered the switch still gets the seconds after it.
+`DOMRU_TELEGRAM_VIDEO=buffer` skips the archive entirely. The buffer costs about
+0.45 Mbit/s (~4 GB a day) around the clock. Either way the FLV is remuxed to MP4 in memory
+(`github.com/yapingcat/gomedia`, pure Go). Clip errors only show up in
+`/api/integrations/state`; the photo and the button are unaffected.
 
 ## 🤝&nbsp; Found a bug? Missing a specific feature?
 

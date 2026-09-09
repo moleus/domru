@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/moleus/domru/pkg/callcontrol"
@@ -89,13 +90,24 @@ func startIntegrations(ctx context.Context, api *domru.APIWrapper, credentials s
 		if x.telegram != nil {
 			x.telegram.Snapshot = func(ctx context.Context) ([]byte, error) { return api.IntercomSnapshot(ctx, x.place, x.control) }
 			x.telegram.Open = x.controller.Open
-			if viper.GetBool("telegram-video") {
-				clips := &videoclip.Source{
+			if mode := strings.ToLower(viper.GetString("telegram-video")); mode != "" && mode != "false" {
+				archive := &videoclip.Source{
 					Camera: func(ctx context.Context) (string, error) { return api.IntercomCameraID(ctx, x.place, x.control) },
 					URL:    api.GetStreamURL,
 					Client: &http.Client{Timeout: 90 * time.Second},
 				}
-				x.telegram.Video = clips.Clip
+				buffer := &videoclip.Buffer{Src: archive, Client: &http.Client{}, Keep: 20 * time.Second}
+				switch mode {
+				case "true": // cloud archive, live buffer once the tariff turns out to have no recording
+					auto := &videoclip.Auto{Archive: archive, Buffer: buffer, Ctx: ctx}
+					go auto.Probe(ctx)
+					x.telegram.Video = auto.Clip
+				case "buffer": // live buffer only, no archive requests at all
+					go buffer.Run(ctx)
+					x.telegram.Video = buffer.Clip
+				default:
+					logger.Error("Invalid DOMRU_TELEGRAM_VIDEO: use true or buffer")
+				}
 			}
 			go x.telegram.Run(ctx)
 		}

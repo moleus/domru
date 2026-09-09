@@ -1,10 +1,10 @@
-// Package videoclip cuts a short MP4 out of the Дом.ру cloud archive.
+// Package videoclip cuts a short MP4 around an intercom call.
 //
-// The operator keeps a continuous recording per camera; a request with
-// TS=<unix seconds> plays that recording from the given moment as HTTP-FLV in
-// real time. One request per call therefore replaces any in-memory ring
-// buffer of the live stream. The FLV (H.264 + MP3) is remuxed into MP4 in
-// memory so Telegram plays it inline.
+// Two sources share the muxer: Source plays the operator's cloud archive
+// (a request with TS=<unix seconds> returns that moment as HTTP-FLV in real
+// time; needs recording on the tariff) and Buffer keeps the last seconds of
+// the live stream in memory. The FLV (H.264 + MP3) is remuxed into MP4 in
+// memory so Telegram plays it inline; nothing touches the disk.
 package videoclip
 
 import (
@@ -34,6 +34,7 @@ const liveThreshold = time.Hour
 var (
 	errLive  = errors.New("archive unavailable, streamer returned live video")
 	errShort = errors.New("archive stream ended early")
+	errEmpty = errors.New("no video frames")
 	errDone  = errors.New("done")
 )
 
@@ -91,71 +92,137 @@ func (s *Source) cameraID(ctx context.Context) (string, error) {
 	return s.camera, nil
 }
 
-// Remux reads an FLV stream and returns an MP4 with the first d of video
-// (plus the MP3 audio in that window). Fewer than d of video is an error:
-// the caller retries once the archive has caught up.
-func Remux(r io.Reader, d time.Duration) ([]byte, error) {
-	var out memWriter
-	muxer, err := mp4.CreateMp4Muxer(&out)
-	if err != nil {
-		return nil, errors.New("cannot create MP4 muxer")
+// frame is one demuxed FLV frame; at is the wall clock when it arrived.
+type frame struct {
+	cid      codec.CodecID
+	data     []byte
+	pts, dts uint32
+	at       time.Time
+	idr      bool // set by Buffer.push
+}
+
+// key reports an H.264 frame that starts a decodable sequence. The FLV
+// demuxer prepends SPS/PPS to every IDR, so either NALU marks one.
+func (f frame) key() bool {
+	if f.cid != codec.CODECID_VIDEO_H264 {
+		return false
 	}
+	key := false
+	codec.SplitFrame(f.data, func(nalu []byte) bool {
+		if len(nalu) > 0 {
+			switch codec.H264NaluTypeWithoutStartCode(nalu) {
+			case codec.H264_NAL_I_SLICE, codec.H264_NAL_SPS:
+				key = true
+			}
+		}
+		return !key
+	})
+	return key
+}
+
+// parseFLV demuxes r and hands every frame (with its own copy of the data)
+// to on. It returns nil at end of stream, the error on returned to stop
+// early, or a generic error for a broken stream.
+func parseFLV(r io.Reader, on func(frame) error) error {
 	reader := flv.CreateFlvReader()
-	var video, audio uint32
-	var hasVideo, hasAudio bool
-	var first uint32
-	limit := uint32(d / time.Millisecond)
 	var stop error
-	reader.OnFrame = func(cid codec.CodecID, frame []byte, pts, dts uint32) {
+	reader.OnFrame = func(cid codec.CodecID, data []byte, pts, dts uint32) {
 		if stop != nil {
 			return
 		}
-		switch cid {
-		case codec.CODECID_VIDEO_H264:
-			if !hasVideo {
-				if time.Duration(dts)*time.Millisecond > liveThreshold {
-					stop = errLive
-					return
-				}
-				video = muxer.AddVideoTrack(mp4.MP4_CODEC_H264)
-				hasVideo, first = true, dts
-			}
-			if dts-first >= limit {
-				stop = errDone
-				return
-			}
-			stop = muxer.Write(video, frame, uint64(pts), uint64(dts))
-		case codec.CODECID_AUDIO_MP3:
-			if !hasVideo {
-				return // align audio with the first video frame
-			}
-			if !hasAudio {
-				audio = muxer.AddAudioTrack(mp4.MP4_CODEC_MP3)
-				hasAudio = true
-			}
-			stop = muxer.Write(audio, frame, uint64(pts), uint64(dts))
-		}
+		stop = on(frame{cid: cid, data: append([]byte(nil), data...), pts: pts, dts: dts, at: time.Now()})
 	}
 	buf := make([]byte, 64<<10)
 	for stop == nil {
 		n, err := r.Read(buf)
 		if n > 0 {
 			if reader.Input(buf[:n]) != nil {
-				return nil, errors.New("invalid FLV stream")
+				return errors.New("invalid FLV stream")
 			}
 		}
 		if err == io.EOF {
-			break
+			return stop
 		}
 		if err != nil {
-			return nil, errors.New("archive read failed")
+			return errors.New("stream read failed")
 		}
 	}
+	return stop
+}
+
+// Remux reads an FLV stream and returns an MP4 with the first d of video
+// (plus the MP3 audio in that window). Fewer than d of video is an error:
+// the caller retries once the archive has caught up.
+func Remux(r io.Reader, d time.Duration) ([]byte, error) {
+	var frames []frame
+	var first uint32
+	hasVideo := false
+	limit := uint32(d / time.Millisecond)
+	err := parseFLV(r, func(f frame) error {
+		if f.cid == codec.CODECID_VIDEO_H264 {
+			if !hasVideo {
+				if time.Duration(f.dts)*time.Millisecond > liveThreshold {
+					return errLive
+				}
+				hasVideo, first = true, f.dts
+			}
+			if f.dts-first >= limit {
+				return errDone
+			}
+		}
+		frames = append(frames, f)
+		return nil
+	})
 	switch {
-	case stop == nil:
+	case err == nil:
 		return nil, errShort
-	case stop != errDone:
-		return nil, stop
+	case err != errDone:
+		return nil, err
+	}
+	return mux(frames)
+}
+
+// mux writes frames into an MP4 starting at the first video frame; audio
+// before it is dropped and timestamps are rebased to zero.
+func mux(frames []frame) ([]byte, error) {
+	var out memWriter
+	muxer, err := mp4.CreateMp4Muxer(&out)
+	if err != nil {
+		return nil, errors.New("cannot create MP4 muxer")
+	}
+	var video, audio uint32
+	var hasVideo, hasAudio bool
+	var base uint32
+	rel := func(ts uint32) uint64 {
+		if ts < base {
+			return 0
+		}
+		return uint64(ts - base)
+	}
+	for _, f := range frames {
+		switch f.cid {
+		case codec.CODECID_VIDEO_H264:
+			if !hasVideo {
+				video = muxer.AddVideoTrack(mp4.MP4_CODEC_H264)
+				hasVideo, base = true, f.dts
+			}
+			err = muxer.Write(video, f.data, rel(f.pts), rel(f.dts))
+		case codec.CODECID_AUDIO_MP3:
+			if !hasVideo {
+				continue // align audio with the first video frame
+			}
+			if !hasAudio {
+				audio = muxer.AddAudioTrack(mp4.MP4_CODEC_MP3)
+				hasAudio = true
+			}
+			err = muxer.Write(audio, f.data, rel(f.pts), rel(f.dts))
+		}
+		if err != nil {
+			return nil, errors.New("cannot write MP4")
+		}
+	}
+	if !hasVideo {
+		return nil, errEmpty
 	}
 	if muxer.WriteTrailer() != nil {
 		return nil, errors.New("cannot finish MP4")
