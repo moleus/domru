@@ -12,6 +12,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
+	github.com/yapingcat/gomedia v0.0.0-20240906162731-17feea57090c
 )
 
 require (

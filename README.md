@@ -138,6 +138,7 @@ test plan live in `decisions/003-sip-webhook-integration.md` (local file).
 | `DOMRU_SIP_DIAGNOSTICS`, `DOMRU_SIP_DIAGNOSTICS_TOKEN` | Enable per-call actions below; token of 24+ characters |
 | `DOMRU_WEBHOOK_URL` | POST `{"event":"Ringing"}` with an `Idempotency-Key` per call |
 | `DOMRU_TELEGRAM_BOT_TOKEN`, `DOMRU_TELEGRAM_CHAT_ID` | Dedicated bot and numeric id of one private chat or group |
+| `DOMRU_TELEGRAM_VIDEO` | `true` follows every photo with a 30 s MP4 (15 s before and after the call) cut from the operator's cloud archive; needs recording on the tariff |
 
 State files next to `accounts.json`: `sip-installation-id` (stable SIP device id)
 and `telegram-state.json` (button bindings, update offset, callback results;
@@ -165,6 +166,14 @@ bot uses long polling, so a bot with a configured webhook is rejected; use a
 dedicated bot. A missing snapshot yields a text notification with the same
 button. The button never expires and may be pressed again later; it always
 refers to the call it was sent for and never ends a newer call.
+
+With `DOMRU_TELEGRAM_VIDEO=true` the bot also replies to the photo with a short
+clip about 15–20 s after the call. The clip is not recorded locally: the
+operator keeps a continuous cloud recording per camera and plays it back from
+any moment (`/video?TS=<unix seconds>`), so the seconds before the call are
+already there. The FLV playback is remuxed to MP4 in memory
+(`github.com/yapingcat/gomedia`, pure Go). A missing recording only shows up
+in `/api/integrations/state`; the photo and the button are unaffected.
 
 ## 🤝&nbsp; Found a bug? Missing a specific feature?
 

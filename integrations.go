@@ -15,6 +15,7 @@ import (
 	"github.com/moleus/domru/pkg/domru"
 	"github.com/moleus/domru/pkg/sipclient"
 	"github.com/moleus/domru/pkg/telegram"
+	"github.com/moleus/domru/pkg/videoclip"
 	"github.com/moleus/domru/pkg/webhook"
 	"github.com/spf13/viper"
 )
@@ -88,6 +89,14 @@ func startIntegrations(ctx context.Context, api *domru.APIWrapper, credentials s
 		if x.telegram != nil {
 			x.telegram.Snapshot = func(ctx context.Context) ([]byte, error) { return api.IntercomSnapshot(ctx, x.place, x.control) }
 			x.telegram.Open = x.controller.Open
+			if viper.GetBool("telegram-video") {
+				clips := &videoclip.Source{
+					Camera: func(ctx context.Context) (string, error) { return api.IntercomCameraID(ctx, x.place, x.control) },
+					URL:    api.GetStreamURL,
+					Client: &http.Client{Timeout: 90 * time.Second},
+				}
+				x.telegram.Video = clips.Clip
+			}
 			go x.telegram.Run(ctx)
 		}
 	}

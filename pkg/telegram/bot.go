@@ -47,11 +47,13 @@ type Bot struct {
 	Client   *http.Client
 	BaseURL  string
 	Snapshot func(context.Context) ([]byte, error)
-	Open     func(context.Context, *string) callcontrol.Result
-	mu       sync.Mutex
-	disk     state
-	status   Status
-	queue    chan callcontrol.Event
+	// Video returns an MP4 of [start, start+d); nil disables the follow-up clip.
+	Video  func(ctx context.Context, start time.Time, d time.Duration) ([]byte, error)
+	Open   func(context.Context, *string) callcontrol.Result
+	mu     sync.Mutex
+	disk   state
+	status Status
+	queue  chan callcontrol.Event
 }
 
 type apiError struct {
@@ -243,7 +245,8 @@ func (b *Bot) notify(ctx context.Context, e callcontrol.Event) {
 		b.set("error", "Cannot persist Telegram button")
 		return
 	}
-	snapshot, cancel := context.WithTimeout(ctx, 3*time.Second)
+	// The native 1080p frame is rendered from the stream and takes ~2 s.
+	snapshot, cancel := context.WithTimeout(ctx, 6*time.Second)
 	photo, photoErr := b.Snapshot(snapshot)
 	cancel()
 	// ponytail: no timestamp, Telegram shows the message time itself.
@@ -283,6 +286,59 @@ func (b *Bot) notify(ctx context.Context, e callcontrol.Event) {
 			} else {
 				b.set("ready", "")
 			}
+			if b.Video != nil {
+				go b.sendVideo(ctx, e, message.ID)
+			}
+			return
+		}
+		b.set("error", err.Error())
+		var ae apiError
+		delay := time.Duration(attempt+1) * time.Second
+		if errors.As(err, &ae) {
+			if ae.code == 429 {
+				delay = time.Duration(ae.retry) * time.Second
+			} else if ae.code < 500 {
+				return
+			}
+		}
+		if !wait(ctx, delay) {
+			return
+		}
+	}
+}
+
+// ponytail: fixed 15 s before / 15 s after the INVITE; make it configurable when someone asks.
+const videoBefore, videoAfter = 15 * time.Second, 15 * time.Second
+
+var videoRetryDelay = videoAfter // shortened in tests
+
+// sendVideo replies to the photo with a clip around the call. Failures only
+// show up in the status: the photo and the button already went out.
+func (b *Bot) sendVideo(ctx context.Context, e callcontrol.Event, replyTo int64) {
+	start, d := e.Time.Add(-videoBefore), videoBefore+videoAfter
+	clip, err := b.Video(ctx, start, d)
+	if err != nil {
+		// The archive trails real time by a few seconds; by now it covers the whole window.
+		if !wait(ctx, videoRetryDelay) {
+			return
+		}
+		clip, err = b.Video(ctx, start, d)
+	}
+	if err != nil {
+		b.set("error", "Video clip unavailable: "+err.Error())
+		return
+	}
+	for attempt := 0; attempt < 3; attempt++ {
+		var body bytes.Buffer
+		form := multipart.NewWriter(&body)
+		_ = form.WriteField("chat_id", strconv.FormatInt(b.cfg.ChatID, 10))
+		_ = form.WriteField("reply_to_message_id", strconv.FormatInt(replyTo, 10))
+		_ = form.WriteField("supports_streaming", "true")
+		part, _ := form.CreateFormFile("video", "intercom.mp4")
+		_, _ = part.Write(clip)
+		_ = form.Close()
+		err = b.api(ctx, "sendVideo", &body, form.FormDataContentType(), nil)
+		if err == nil {
 			return
 		}
 		b.set("error", err.Error())

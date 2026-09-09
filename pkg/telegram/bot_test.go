@@ -360,3 +360,51 @@ func TestChangedIntercomInvalidatesOldButtons(t *testing.T) {
 	require.Zero(t, opens)
 	require.Zero(t, f2.count("sendMessage"))
 }
+
+func TestVideoClipRepliesToPhoto(t *testing.T) {
+	f, srv := newFake(t)
+	e := start(t, f, srv, filepath.Join(t.TempDir(), "tg.json"), nil)
+	videoRetryDelay = 10 * time.Millisecond
+	var calls int32
+	var mu sync.Mutex
+	var gotStart time.Time
+	var gotD time.Duration
+	e.bot.Video = func(_ context.Context, start time.Time, d time.Duration) ([]byte, error) {
+		if atomic.AddInt32(&calls, 1) == 1 {
+			return nil, errors.New("archive stream ended early") // first try races the archive
+		}
+		mu.Lock()
+		gotStart, gotD = start, d
+		mu.Unlock()
+		return []byte("\x00\x00\x00\x1cftypisom"), nil
+	}
+	call := time.Now()
+	e.bot.Enqueue(callcontrol.Event{ID: "call-1", Time: call, Name: "door"})
+	f.waitFor("sendPhoto", 1)
+	f.waitFor("sendVideo", 1)
+	body := f.last("sendVideo")
+	require.Contains(t, body, "name=\"reply_to_message_id\"\r\n\r\n101\r\n")
+	require.Contains(t, body, "ftypisom")
+	require.Contains(t, body, "intercom.mp4")
+	require.Contains(t, body, "supports_streaming")
+	mu.Lock()
+	require.Equal(t, call.Add(-15*time.Second), gotStart)
+	require.Equal(t, 30*time.Second, gotD)
+	mu.Unlock()
+	require.EqualValues(t, 2, atomic.LoadInt32(&calls))
+	// Persistent clip failure only shows in the status; photo and button are unaffected.
+	e.bot.Video = func(context.Context, time.Time, time.Duration) ([]byte, error) {
+		return nil, errors.New("archive HTTP 500")
+	}
+	e.bot.Enqueue(callcontrol.Event{ID: "call-2", Time: time.Now(), Name: "door"})
+	f.waitFor("sendPhoto", 2)
+	require.Eventually(t, func() bool { return strings.Contains(e.bot.Status().Error, "archive HTTP 500") }, 3*time.Second, 10*time.Millisecond)
+	require.Equal(t, 1, f.count("sendVideo"))
+	// Video == nil: no clip at all.
+	e.bot.Video = nil
+	e.bot.Enqueue(callcontrol.Event{ID: "call-3", Time: time.Now(), Name: "door"})
+	f.waitFor("sendPhoto", 3)
+	time.Sleep(50 * time.Millisecond)
+	require.Equal(t, 1, f.count("sendVideo"))
+	require.NotContains(t, f.last("sendVideo"), "TOKEN\"")
+}

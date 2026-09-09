@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/moleus/domru/pkg/domru/models"
 )
@@ -86,8 +88,18 @@ func (w *APIWrapper) SIPDevice(ctx context.Context, place, control int, installa
 	return c, name, nil
 }
 
+// IntercomSnapshot returns a native 1920x1080 frame of the intercom camera.
+// The door's own /accesscontrols/{id}/snapshots endpoint only ever renders the
+// 500x281 thumbnail: with width/height it upscales it (1920x1080 comes back as
+// a blurry 1920x1079), so the frame is taken from the forpost camera endpoint
+// keyed by externalCameraId, which grabs it from the stream. Falls back to the
+// thumbnail path when the camera is unknown - a small photo beats none.
 func (w *APIWrapper) IntercomSnapshot(ctx context.Context, place, control int) ([]byte, error) {
-	res, err := w.integrationRequest(ctx, http.MethodGet, fmt.Sprintf("/rest/v1/places/%d/accesscontrols/%d/snapshots", place, control), nil)
+	path := fmt.Sprintf("/rest/v1/places/%d/accesscontrols/%d/snapshots?width=1920&height=1080", place, control)
+	if camera, err := w.IntercomCameraID(ctx, place, control); err == nil {
+		path = fmt.Sprintf("/rest/v1/forpost/cameras/%s/snapshots?width=1920&height=1080", url.PathEscape(camera))
+	}
+	res, err := w.integrationRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -106,4 +118,46 @@ func (w *APIWrapper) OpenIntercom(ctx context.Context, place, control int) error
 	}
 	res.Body.Close()
 	return nil
+}
+
+// IntercomCameraID returns the forpost camera of the configured intercom
+// (`externalCameraId` in /accesscontrols); the cloud archive is keyed by it.
+func (w *APIWrapper) IntercomCameraID(ctx context.Context, place, control int) (string, error) {
+	// ponytail: one lock for the single configured intercom; split per control if it ever grows.
+	w.cameraMu.Lock()
+	defer w.cameraMu.Unlock()
+	if id, ok := w.cameras[control]; ok {
+		return id, nil
+	}
+	res, err := w.integrationRequest(ctx, http.MethodGet, fmt.Sprintf("/rest/v1/places/%d/accesscontrols", place), nil)
+	if err != nil {
+		return "", err
+	}
+	var controls models.AccessControlsResponse
+	err = json.NewDecoder(io.LimitReader(res.Body, 1<<20)).Decode(&controls)
+	res.Body.Close()
+	if err != nil {
+		return "", fmt.Errorf("invalid access controls response")
+	}
+	for _, ac := range controls.Data {
+		if ac.ID != control {
+			continue
+		}
+		var id string
+		switch v := ac.ExternalCameraId.(type) {
+		case string:
+			id = v
+		case float64:
+			id = strconv.FormatFloat(v, 'f', 0, 64)
+		}
+		if id != "" {
+			if w.cameras == nil {
+				w.cameras = map[int]string{}
+			}
+			w.cameras[control] = id
+			return id, nil
+		}
+		return "", fmt.Errorf("intercom has no camera")
+	}
+	return "", fmt.Errorf("configured intercom is not in accesscontrols")
 }

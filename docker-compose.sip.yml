@@ -37,6 +37,8 @@ services:
       DOMRU_WEBHOOK_URL: "${DOMRU_WEBHOOK_URL:-}"
       DOMRU_TELEGRAM_BOT_TOKEN: "${DOMRU_TELEGRAM_BOT_TOKEN:-}"
       DOMRU_TELEGRAM_CHAT_ID: "${DOMRU_TELEGRAM_CHAT_ID:-}"
+      # 20 s MP4 from the operator's cloud archive as a reply to the photo.
+      DOMRU_TELEGRAM_VIDEO: "${DOMRU_TELEGRAM_VIDEO:-false}"
     volumes:
       # accounts.json, sip-installation-id and telegram-state.json live here.
       - ./data:/data

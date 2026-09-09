@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/moleus/domru/pkg/auth"
 	"github.com/moleus/domru/pkg/domru/constants"
@@ -18,6 +19,11 @@ type APIWrapper struct {
 	Logger     *slog.Logger
 	baseURL    string
 	authClient myhttp.HTTPClient
+
+	// cameras caches externalCameraId per access control; it does not change
+	// while the process runs, and a call notification cannot wait for it.
+	cameraMu sync.Mutex
+	cameras  map[int]string
 }
 
 func NewDomruAPI(authClient myhttp.HTTPClient) *APIWrapper {
