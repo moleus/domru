@@ -28,7 +28,7 @@ type UpstreamError struct {
 }
 
 func (e *UpstreamError) Error() string {
-	return fmt.Sprintf("upstream error: %d, body: %s", e.StatusCode, e.Body)
+	return fmt.Sprintf("upstream error: %d", e.StatusCode)
 }
 
 func NewUpstreamError(statusCode int, body string) *UpstreamError {
@@ -48,7 +48,7 @@ func NewUpstreamRequest(url string, options ...func(sender *UpstreamRequest)) *U
 	for key, value := range defaultHeaders {
 		headers.Set(key, value)
 	}
-	sender := &UpstreamRequest{url: url, headers: headers, body: nil, client: http.DefaultClient, logger: slog.Default()}
+	sender := &UpstreamRequest{url: url, headers: headers, body: nil, client: &http.Client{Timeout: 15 * time.Second}, logger: slog.Default()}
 
 	for _, option := range options {
 		option(sender)
@@ -104,7 +104,7 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 		if content, err = io.ReadAll(resp.Body); err != nil {
 			return fmt.Errorf("failed to read response content: %w. Status code: %d", err, resp.StatusCode)
 		}
-		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_headers", u.headers).With("request_body", u.body).With("response_body", string(content)).Debug("failed to send request")
+		u.logger.With("status", resp.StatusCode).Debug("upstream request failed")
 		return NewUpstreamError(resp.StatusCode, string(content))
 	}
 
@@ -120,7 +120,7 @@ func (u *UpstreamRequest) Send(method string, output interface{}) error {
 
 	if decodeErr := json.NewDecoder(bytes.NewReader(content)).Decode(&output); decodeErr != nil {
 		u.logger.With("url", u.url).With("status", resp.StatusCode).With("request_body", u.body).Debug("failed to send request")
-		return fmt.Errorf("decode response. First 100 characters of body: '%s'. Error: %w", content[:100], decodeErr)
+		return fmt.Errorf("cannot decode upstream JSON response")
 	}
 	return nil
 }
@@ -146,6 +146,6 @@ func (u *UpstreamRequest) SendRequest(method string) (*http.Response, error) {
 	}
 
 	resp, err := u.client.Do(req)
-	u.logger.With("url", req.URL).With("method", req.Method).With("headers", req.Header).Debug("Sent request")
+	u.logger.With("method", req.Method).Debug("Sent upstream request")
 	return resp, err
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"log"
@@ -8,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -71,6 +74,9 @@ func main() {
 
 	retryableClient := retryablehttp.NewClient()
 	retryableClient.RetryMax = 5
+	retryableClient.Logger = nil
+	retryableClient.HTTPClient.Timeout = 15 * time.Second
+	retryableClient.HTTPClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 
 	credentialsStore := auth.NewFileCredentialsStore(credentialsFile)
 
@@ -83,13 +89,20 @@ func main() {
 		authProvider,
 		authProvider,
 	)
-	authClient.DefaultClient = retryableClient.StandardClient()
+	authClient.DefaultClient = methodHTTPClient{read: retryableClient.StandardClient(), write: retryableClient.HTTPClient}
 	authClient.Logger = logger
 
 	domruAPI := domru.NewDomruAPI(authClient)
 	domruAPI.Logger = logger
 	handlers := controllers.NewHandlers(templateFs, credentialsStore, domruAPI)
 	handlers.Logger = logger
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	integrations := startIntegrations(ctx, domruAPI, credentialsFile, logger)
+	integrations.routes(http.DefaultServeMux)
+	if integrations.controller != nil {
+		handlers.EndCallDoor = [2]int{integrations.place, integrations.control}
+	}
 
 	upstream, err := url.Parse(constants.BaseURL)
 	if err != nil {
@@ -127,11 +140,28 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  50 * time.Second,
 	}
+	go func() {
+		<-ctx.Done()
+		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = server.Shutdown(shutdown)
+	}()
 
 	err = server.ListenAndServe()
-	if err != nil {
+	if err != nil && err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
+}
+
+// Only read requests use retryablehttp. POST door commands are never retried
+// after a transport error or an ambiguous upstream failure.
+type methodHTTPClient struct{ read, write *http.Client }
+
+func (c methodHTTPClient) Do(r *http.Request) (*http.Response, error) {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		return c.read.Do(r)
+	}
+	return c.write.Do(r)
 }
 
 func overrideCredentialsWithFlags(credentialsStore *auth.FileCredentialsStore, logger *slog.Logger) {

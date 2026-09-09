@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/moleus/domru/pkg/auth"
 	"github.com/moleus/domru/pkg/domru/constants"
@@ -18,6 +19,11 @@ type APIWrapper struct {
 	Logger     *slog.Logger
 	baseURL    string
 	authClient myhttp.HTTPClient
+
+	// cameras caches externalCameraId per access control; it does not change
+	// while the process runs, and a call notification cannot wait for it.
+	cameraMu sync.Mutex
+	cameras  map[int]string
 }
 
 func NewDomruAPI(authClient myhttp.HTTPClient) *APIWrapper {
@@ -63,6 +69,26 @@ func (w *APIWrapper) RequestPlaces() (models.PlacesResponse, error) {
 		return models.PlacesResponse{}, fmt.Errorf("request places: %w", err)
 	}
 	return places, nil
+}
+
+func (w *APIWrapper) RequestScreenSections(placeID int) (models.ScreenSectionsResponse, error) {
+	var sections models.ScreenSectionsResponse
+	sectionsURL := fmt.Sprintf("%s/rest/v1/places/%d/screen-sections", w.baseURL, placeID)
+	err := helpers.NewUpstreamRequest(sectionsURL, helpers.WithClient(w.authClient)).Send(http.MethodGet, &sections)
+	if err != nil {
+		return models.ScreenSectionsResponse{}, fmt.Errorf("request camera sections for place %d: %w", placeID, err)
+	}
+	return sections, nil
+}
+
+func (w *APIWrapper) RequestAccessControls(placeID int) (models.AccessControlsResponse, error) {
+	var controls models.AccessControlsResponse
+	controlsURL := fmt.Sprintf("%s/rest/v1/places/%d/accesscontrols", w.baseURL, placeID)
+	err := helpers.NewUpstreamRequest(controlsURL, helpers.WithClient(w.authClient)).Send(http.MethodGet, &controls)
+	if err != nil {
+		return models.AccessControlsResponse{}, fmt.Errorf("request access controls for place %d: %w", placeID, err)
+	}
+	return controls, nil
 }
 
 func (w *APIWrapper) RequestFinances() (models.FinancesResponse, error) {

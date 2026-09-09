@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 
 	"github.com/moleus/domru/pkg/auth"
 	"github.com/moleus/domru/pkg/domru/constants"
@@ -14,6 +15,7 @@ import (
 type ValidTokenProvider struct {
 	Logger           *slog.Logger
 	credentialsStore auth.CredentialsStore
+	refreshMu        sync.Mutex
 }
 
 func NewValidTokenProvider(credentialsStore auth.CredentialsStore) *ValidTokenProvider {
@@ -44,6 +46,8 @@ func (v *ValidTokenProvider) GetToken() (string, error) {
 }
 
 func (v *ValidTokenProvider) RefreshToken() error {
+	v.refreshMu.Lock()
+	defer v.refreshMu.Unlock()
 	v.Logger.Debug("refreshing token...")
 	credentials, err := v.credentialsStore.LoadCredentials()
 	if err != nil {

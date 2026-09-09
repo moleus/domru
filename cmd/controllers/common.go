@@ -9,7 +9,6 @@ import (
 
 	"github.com/moleus/domru/pkg/auth"
 	"github.com/moleus/domru/pkg/domru"
-	"github.com/moleus/domru/pkg/domru/constants"
 	"github.com/moleus/domru/pkg/domru/models"
 	"github.com/moleus/domru/pkg/homeassistant"
 )
@@ -19,6 +18,9 @@ type Handler struct {
 	domruAPI         *domru.APIWrapper
 	credentialsStore auth.CredentialsStore
 	accountInfo      *models.Account
+	// EndCallDoor is the {place, access control} whose "Открыть" button and HA
+	// snippet go through /api/.../open-and-end-call (SIP intercom). Zero = none.
+	EndCallDoor [2]int
 
 	TemplateFs embed.FS
 }
@@ -57,11 +59,7 @@ func (h *Handler) renderTemplate(w http.ResponseWriter, templateName string, dat
 }
 
 func getTemplateFunctions() template.FuncMap {
-	return template.FuncMap{
-		"getSnapshotUrl":     constants.GetSnapshotUrl,
-		"getOpenDoorUrl":     constants.GetOpenDoorUrl,
-		"getCameraStreamUrl": constants.GetCameraStreamUrl,
-	}
+	return template.FuncMap{}
 }
 func (h *Handler) determineBaseURL(r *http.Request) string {
 	var scheme string
